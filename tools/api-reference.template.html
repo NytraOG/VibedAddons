@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forever API Reference</title>
+<style>
+:root {
+  --bg: #f7f5f0; --panel: #ffffff; --text: #1d1b16; --muted: #6b665c; --line: #e3ded3;
+  --accent: #8a5a00; --code-bg: #f1ede4; --hl: #fff3cf;
+  --b-secret-bg: #fde7d4; --b-secret-fg: #8a3b00;
+  --b-never-bg: #dcf1df; --b-never-fg: #1d6230;
+  --b-prot-bg: #fadada; --b-prot-fg: #8f1d1d;
+  --b-req-bg: #dde8f8; --b-req-fg: #1f4a85;
+  --b-misc-bg: #ebe8e1; --b-misc-fg: #4b473f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15140f; --panel: #1d1c17; --text: #ebe7dc; --muted: #9c968a; --line: #2f2d26;
+    --accent: #e5b04a; --code-bg: #24231d; --hl: #3a3218;
+    --b-secret-bg: #4a2b14; --b-secret-fg: #ffc08a;
+    --b-never-bg: #1d3a24; --b-never-fg: #9fe0ad;
+    --b-prot-bg: #4a1c1c; --b-prot-fg: #ffadad;
+    --b-req-bg: #1c2d47; --b-req-fg: #a9c8f5;
+    --b-misc-bg: #2b2a24; --b-misc-fg: #c9c4b8;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15140f; --panel: #1d1c17; --text: #ebe7dc; --muted: #9c968a; --line: #2f2d26;
+  --accent: #e5b04a; --code-bg: #24231d; --hl: #3a3218;
+  --b-secret-bg: #4a2b14; --b-secret-fg: #ffc08a;
+  --b-never-bg: #1d3a24; --b-never-fg: #9fe0ad;
+  --b-prot-bg: #4a1c1c; --b-prot-fg: #ffadad;
+  --b-req-bg: #1c2d47; --b-req-fg: #a9c8f5;
+  --b-misc-bg: #2b2a24; --b-misc-fg: #c9c4b8;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+code, pre, .mono { font-family: "Cascadia Code", Consolas, ui-monospace, monospace; font-size: 13px; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.layout { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
+aside { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; }
+.search { padding: 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.search input[type=search] { width: 100%; padding: 8px 10px; font-size: 15px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+.filters { display: flex; flex-wrap: wrap; gap: 4px; }
+.filters button { border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 999px; padding: 2px 10px; font-size: 12px; cursor: pointer; }
+.filters button.on { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.opts { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+#results { overflow-y: auto; flex: 1; }
+#results a { display: block; padding: 5px 14px; color: var(--text); border-bottom: 1px solid var(--line); }
+#results a:hover, #results a.sel { background: var(--hl); text-decoration: none; }
+#results .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; display: inline-block; width: 26px; }
+#results .sub { display: block; font-size: 12px; color: var(--muted); margin-left: 32px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#results .more { padding: 8px 14px; color: var(--muted); font-size: 12px; }
+main { overflow-y: auto; padding: 24px 32px 80px; min-width: 0; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 32px 0 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.meta { color: var(--muted); font-size: 13px; }
+.item { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin: 12px 0; scroll-margin-top: 16px; }
+.item.target { box-shadow: 0 0 0 2px var(--accent); }
+.item h3 { margin: 0 0 6px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.item h3 .links { font-size: 12px; font-weight: normal; margin-left: auto; display: flex; gap: 10px; }
+.doc { margin: 6px 0; }
+pre.sig { background: var(--code-bg); padding: 8px 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; white-space: pre-wrap; word-break: break-word; }
+table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 13px; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: 12px; }
+th, td { padding: 3px 8px 3px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.n { white-space: nowrap; }
+.label { font-size: 12px; color: var(--muted); margin-top: 10px; font-weight: 600; }
+.badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 4px; margin: 2px 4px 2px 0; cursor: help; background: var(--b-misc-bg); color: var(--b-misc-fg); }
+.badge.secret { background: var(--b-secret-bg); color: var(--b-secret-fg); }
+.badge.never { background: var(--b-never-bg); color: var(--b-never-fg); }
+.badge.prot { background: var(--b-prot-bg); color: var(--b-prot-fg); }
+.badge.req { background: var(--b-req-bg); color: var(--b-req-fg); }
+.ex { margin: 4px 0 0; padding: 0; list-style: none; }
+.ex li { margin: 4px 0; }
+.ex .src { font-size: 12px; }
+.ex code { display: block; background: var(--code-bg); padding: 4px 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+.syslist { columns: 3 220px; column-gap: 24px; }
+.syslist a { display: block; padding: 1px 0; break-inside: avoid; }
+.syslist .c { color: var(--muted); font-size: 12px; }
+.legend td { padding: 4px 8px 4px 0; }
+.legend td:first-child { white-space: nowrap; }
+.toc { font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.theme { border: 1px solid var(--line); background: var(--bg); color: var(--muted); border-radius: 6px; padding: 1px 8px; cursor: pointer; font-size: 12px; }
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; height: 100vh; }
+  aside { border-right: 0; border-bottom: 1px solid var(--line); }
+  main { padding: 16px 16px 60px; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <div class="search">
+      <input id="q" type="search" placeholder="Suchen: threat, C_Spell, UNIT_AURA …" autofocus autocomplete="off">
+      <div class="filters" id="filters">
+        <button data-k="all" class="on">Alle</button>
+        <button data-k="fn">Funktionen</button>
+        <button data-k="ev">Events</button>
+        <button data-k="tb">Typen</button>
+        <button data-k="sys">Systeme</button>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="indoc"> auch Beschreibungen durchsuchen</label>
+        <button class="theme" id="theme" title="Hell/Dunkel umschalten">◐</button>
+      </div>
+    </div>
+    <div id="results"></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<script>
+const DATA = /*__DATA__*/null;
+const GH = "https://github.com/Gethe/wow-ui-source/blob/forever/";
+const WIKI = "https://warcraft.wiki.gg/wiki/";
+const WIKI_SEARCH = "https://warcraft.wiki.gg/index.php?search=";
+const KIND_LABEL = { fn: "fn", ev: "ev", tb: "typ", sys: "sys" };
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const words = s => s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+
+// ---- Flags -> Badges mit Erklaerung ----
+const SECRET_ARGS = {
+  AllowedWhenUntainted: ["secret-args: nur Blizzard", "Secret-Werte dürfen nur aus untaintetem (Blizzard-)Code übergeben werden. Addon-Code darf keine Secret-Werte reinstecken.", "secret"],
+  AllowedWhenTainted: ["secret-args: erlaubt", "Auch Addon-Code darf Secret-Werte als Argument übergeben.", "never"],
+  NotAllowed: ["secret-args: verboten", "Secret-Werte als Argument sind nie erlaubt, auch nicht für Blizzard-Code.", "prot"],
+};
+function badge(key, val) {
+  if (key === "SecretArguments" && SECRET_ARGS[val]) {
+    const [t, tip, cls] = SECRET_ARGS[val];
+    return `<span class="badge ${cls}" title="${esc(tip)}">${esc(t)}</span>`;
+  }
+  let cls = "", tip = "", text = key;
+  if (key === "IsProtectedFunction") { cls = "prot"; text = "geschützt"; tip = "Geschützte Funktion: nur aus sicherem Blizzard-Code aufrufbar. Aus Addon-Code führt der Aufruf zu ADDON_ACTION_BLOCKED."; }
+  else if (key === "Environment" && val === "SecureOnly") { cls = "prot"; text = "nur Blizzard"; tip = "Nur in Blizzards sicherer Umgebung verfügbar, nicht für Addons."; }
+  else if (key === "Environment") return "";
+  else if (key === "MayReturnNothing") { text = "kann nil liefern"; tip = "Kann ohne Rückgabewerte zurückkehren, alle Rückgaben sind dann nil."; }
+  else if (key === "NeverSecret" || key === "ReturnsNeverSecret") { cls = "never"; text = "nie secret"; tip = "Dieser Wert ist nie ein Secret-Value und immer lesbar."; }
+  else if (key === "ConditionalSecret") { cls = "secret"; text = "evtl. secret"; tip = "Dieser Wert kann je nach Situation (z.B. im Kampf) ein Secret-Value sein. Mit issecretvalue() prüfen."; }
+  else if (key === "SecretReturns") { cls = "secret"; text = "Rückgaben secret"; tip = "Die Rückgabewerte sind Secret-Values."; }
+  else if (key === "SecretReturnsForAspect") { cls = "secret"; text = "secret für: " + String(val).replace(/Enum\.SecretAspect\./g, ""); tip = "Rückgaben sind secret, wenn das genannte Aspekt-Secret aktiv ist."; }
+  else if (key === "SecretPayloads") { cls = "secret"; text = "Payload secret"; tip = "Die Event-Argumente können Secret-Values sein."; }
+  else if (key.startsWith("SecretWhen")) { cls = "secret"; text = "secret wenn: " + words(key.slice(10)).replace(/ Restricted$/, " eingeschränkt"); tip = "Rückgaben werden zu Secret-Values, wenn diese Einschränkung aktiv ist (" + key + ")."; }
+  else if (key.startsWith("SecretIn")) { cls = "secret"; text = "secret in: " + words(key.slice(8)); tip = key; }
+  else if (key.startsWith("Secret")) { cls = "secret"; tip = key + " = " + val; }
+  else if (key.startsWith("Requires") || key.startsWith("Require")) { cls = "req"; text = "braucht: " + words(key.replace(/^Requires?/, "")); tip = key; }
+  else if (key === "SynchronousEvent") { text = "synchron"; tip = "SynchronousEvent: wird synchron ausgelöst."; }
+  else { tip = key + (val === true ? "" : " = " + val); if (val !== true) text = key + "=" + val; }
+  return `<span class="badge ${cls}" title="${esc(tip)}">${esc(text)}</span>`;
+}
+const badges = f => f ? Object.entries(f).map(([k, v]) => badge(k, v)).join("") : "";
+
+// ---- Indizes ----
+const typeMap = new Map();
+const entries = [];
+DATA.systems.forEach((s, si) => {
+  const sysName = s.ns || s.n;
+  entries.push({ k: "sys", name: sysName, sub: s.t === "ScriptObject" ? "Objekt-Methoden" : (s.ns ? "Namespace" : "System (globale Funktionen)"), si, lc: sysName.toLowerCase(), doc: (s.d || "").toLowerCase() });
+  s.fn.forEach((f, ii) => {
+    const full = fnFullName(s, f);
+    entries.push({ k: "fn", name: full, sub: sigShort(f), si, ii, lc: full.toLowerCase(), short: f.n.toLowerCase(), doc: (f.d || "").toLowerCase() });
+  });
+  s.ev.forEach((e, ii) => entries.push({ k: "ev", name: e.lit || e.n, sub: e.p.map(p => p.n).join(", "), si, ii, lc: (e.lit || e.n).toLowerCase(), doc: (e.d || "").toLowerCase() }));
+  s.tb.forEach((t, ii) => {
+    if (!typeMap.has(t.n)) typeMap.set(t.n, [si, ii]);
+    const display = t.t === "Enumeration" ? "Enum." + t.n : t.n;
+    entries.push({ k: "tb", name: display, sub: t.t, si, ii, lc: display.toLowerCase(), short: t.n.toLowerCase(), doc: (t.d || "").toLowerCase() });
+  });
+});
+
+function fnFullName(s, f) {
+  if (s.t === "ScriptObject") return s.n.replace(/API$/, "") + ":" + f.n;
+  return s.ns ? s.ns + "." + f.n : f.n;
+}
+function exampleKey(s, f) {
+  if (s.t === "ScriptObject") return ":" + f.n;
+  return s.ns ? s.ns + "." + f.n : f.n;
+}
+function sigShort(f) { return "(" + f.a.map(a => a.n).join(", ") + ")" + (f.r.length ? " → " + f.r.map(r => r.n).join(", ") : ""); }
+
+// ---- Rendering ----
+function typeHtml(p) {
+  const link = t => typeMap.has(t) ? `<a href="#/t/${encodeURIComponent(t)}">${esc(t)}</a>` : esc(t);
+  let t = link(p.t);
+  if (p.in) t += "&lt;" + link(p.in) + "&gt;";
+  if (p.mx) t += ` <span class="meta">(Mixin ${esc(p.mx)})</span>`;
+  return t + (p.nil ? "?" : "");
+}
+function paramTable(list, valueCol) {
+  if (!list.length) return "";
+  const hasDoc = list.some(p => p.d), hasDef = list.some(p => p.def !== undefined), hasFlags = list.some(p => p.f);
+  let h = `<table><tr><th>Name</th>${valueCol ? "<th>Wert</th>" : ""}<th>Typ</th>${hasDef ? "<th>Default</th>" : ""}${hasDoc || hasFlags ? "<th></th>" : ""}</tr>`;
+  for (const p of list) {
+    h += `<tr><td class="n mono">${esc(p.n)}</td>${valueCol ? `<td class="mono">${esc(p.v)}</td>` : ""}<td class="mono">${typeHtml(p)}</td>`;
+    if (hasDef) h += `<td class="mono">${p.def !== undefined ? esc(JSON.stringify(p.def)) : ""}</td>`;
+    if (hasDoc || hasFlags) h += `<td>${badges(p.f)}${esc(p.d || "")}</td>`;
+    h += "</tr>";
+  }
+  return h + "</table>";
+}
+function examplesHtml(key) {
+  const e = DATA.examples[key];
+  if (!e) return `<div class="label">Beispiele aus Blizzards Code</div><div class="meta">Keine Aufrufe im Blizzard-UI-Code gefunden.</div>`;
+  let h = `<div class="label">Beispiele aus Blizzards Code (${e.c} Treffer gesamt)</div><ul class="ex">`;
+  for (const [file, line, text] of e.ex) {
+    h += `<li><a class="src mono" href="${GH}${encodeURI(file)}#L${line}" target="_blank" rel="noopener">${esc(file.replace(/^Interface\/AddOns\//, ""))}:${line}</a><code>${esc(text)}</code></li>`;
+  }
+  return h + "</ul>";
+}
+function fnHtml(s, f, ii) {
+  const full = fnFullName(s, f);
+  const call = s.t === "ScriptObject" ? "obj:" + f.n : full;
+  const sig = (f.r.length ? "local " + f.r.map(r => r.n).join(", ") + " = " : "") + call + "(" + f.a.map(a => a.n).join(", ") + ")";
+  const wiki = s.t === "ScriptObject" ? WIKI_SEARCH + encodeURIComponent(f.n) : WIKI + "API_" + encodeURIComponent(full);
+  return `<div class="item" id="fn-${ii}"><h3><span class="mono">${esc(full)}</span>${badges(f.f)}
+    <span class="links"><a href="${wiki}" target="_blank" rel="noopener">Wiki ↗</a><a href="#/s/${encodeURIComponent(s.n)}/fn/${ii}">Link</a></span></h3>
+    ${f.d ? `<div class="doc">${esc(f.d)}</div>` : ""}
+    <pre class="sig">${esc(sig)}</pre>
+    ${f.a.length ? `<div class="label">Argumente</div>${paramTable(f.a)}` : ""}
+    ${f.r.length ? `<div class="label">Rückgaben</div>${paramTable(f.r)}` : ""}
+    ${examplesHtml(exampleKey(s, f))}</div>`;
+}
+function evHtml(s, e, ii) {
+  const handler = `frame:RegisterEvent("${e.lit}")\n-- OnEvent: function(self, event${e.p.map(p => ", " + p.n).join("")})`;
+  return `<div class="item" id="ev-${ii}"><h3><span class="mono">${esc(e.lit)}</span>${badges(e.f)}
+    <span class="links"><a href="${WIKI}${encodeURIComponent(e.lit)}" target="_blank" rel="noopener">Wiki ↗</a><a href="#/s/${encodeURIComponent(s.n)}/ev/${ii}">Link</a></span></h3>
+    ${e.d ? `<div class="doc">${esc(e.d)}</div>` : ""}
+    <pre class="sig">${esc(handler)}</pre>
+    ${e.p.length ? `<div class="label">Payload</div>${paramTable(e.p)}` : `<div class="meta">Keine Payload.</div>`}
+    ${examplesHtml(e.lit)}</div>`;
+}
+function tbHtml(s, t, ii) {
+  const display = t.t === "Enumeration" ? "Enum." + t.n : t.n;
+  const isEnum = t.t === "Enumeration", isConst = t.t === "Constants";
+  return `<div class="item" id="tb-${ii}"><h3><span class="mono">${esc(display)}</span><span class="badge">${esc(t.t)}</span>${badges(t.f)}
+    <span class="links"><a href="${WIKI_SEARCH}${encodeURIComponent(display)}" target="_blank" rel="noopener">Wiki ↗</a><a href="#/s/${encodeURIComponent(s.n)}/tb/${ii}">Link</a></span></h3>
+    ${t.d ? `<div class="doc">${esc(t.d)}</div>` : ""}
+    ${t.t === "CallbackType" ? `<div class="label">Callback-Argumente</div>` : ""}
+    ${paramTable(t.fl, isEnum || isConst)}</div>`;
+}
+function renderSystem(si, kind, ii) {
+  const s = DATA.systems[si];
+  const title = s.ns || s.n;
+  const typ = s.t === "ScriptObject" ? "Objekt-Methoden (" + esc(s.f && s.f.ObjectType || "Widget") + ")"
+    : s.ns ? "Namespace" : s.fn.length ? "System mit globalen Funktionen" : s.ev.length ? "Events" : "Typen und Konstanten";
+  let h = `<h1 class="mono">${esc(title)}</h1><div class="meta">${typ} · ${badges(s.f)} Quelle: <a href="${GH}Interface/AddOns/Blizzard_APIDocumentationGenerated/${esc(s.file)}" target="_blank" rel="noopener">${esc(s.file)}</a></div>`;
+  if (s.d) h += `<p>${esc(s.d)}</p>`;
+  h += `<div class="toc" style="margin-top:12px">${s.fn.length ? `<a href="#/s/${encodeURIComponent(s.n)}/fn/0">${s.fn.length} Funktionen</a>` : ""}${s.ev.length ? `<a href="#/s/${encodeURIComponent(s.n)}/ev/0">${s.ev.length} Events</a>` : ""}${s.tb.length ? `<a href="#/s/${encodeURIComponent(s.n)}/tb/0">${s.tb.length} Typen</a>` : ""}</div>`;
+  if (s.fn.length) h += `<h2>Funktionen</h2>` + s.fn.map((f, i) => fnHtml(s, f, i)).join("");
+  if (s.ev.length) h += `<h2>Events</h2>` + s.ev.map((e, i) => evHtml(s, e, i)).join("");
+  if (s.tb.length) h += `<h2>Typen</h2>` + s.tb.map((t, i) => tbHtml(s, t, i)).join("");
+  const main = document.getElementById("main");
+  main.innerHTML = h;
+  const target = kind ? document.getElementById(kind + "-" + ii) : null;
+  if (target) { target.classList.add("target"); target.scrollIntoView(); } else main.scrollTop = 0;
+}
+function renderHome() {
+  const n = k => DATA.systems.reduce((a, s) => a + s[k].length, 0);
+  const sys = DATA.systems.map((s, si) => ({ s, si, name: s.ns || s.n })).sort((a, b) => a.name.localeCompare(b.name));
+  const legend = [
+    ["IsProtectedFunction", true], ["SecretArguments", "AllowedWhenUntainted"], ["SecretWhenUnitThreatValuesRestricted", true],
+    ["ConditionalSecret", true], ["NeverSecret", true], ["RequiresUnitAuraAccess", true], ["MayReturnNothing", true],
+  ].map(([k, v]) => `<tr><td>${badge(k, v)}</td><td>${esc(badgeTip(k, v))}</td></tr>`).join("");
+  document.getElementById("main").innerHTML = `
+    <h1>WoW Forever API-Referenz</h1>
+    <div class="meta">Build ${esc(DATA.version)} · ${DATA.systems.length} Systeme · ${n("fn")} Funktionen · ${n("ev")} Events · ${n("tb")} Typen</div>
+    <p>Erzeugt aus Blizzards <span class="mono">Blizzard_APIDocumentationGenerated</span> (dieselben Daten wie <span class="mono">/api</span>) plus Aufrufbeispielen aus Blizzards eigenem UI-Code.
+    Erklärtexte gibt es nur, wo Blizzard selbst welche hinterlegt hat. Für den Rest hilft der Wiki-Link (Retail-Seiten passen meist, weil Forever auf dem Retail-Client basiert).</p>
+    <h2>Badges</h2><table class="legend">${legend}</table>
+    <h2>Alle Systeme</h2><div class="syslist">${sys.map(x => `<a href="#/s/${encodeURIComponent(x.s.n)}" class="mono">${esc(x.name)} <span class="c">${x.s.fn.length || ""}</span></a>`).join("")}</div>`;
+  document.getElementById("main").scrollTop = 0;
+}
+function badgeTip(k, v) { const m = badge(k, v).match(/title="([^"]*)"/); const d = document.createElement("div"); d.innerHTML = m ? m[1] : ""; return d.textContent; }
+
+// ---- Suche ----
+let kindFilter = "all";
+function search() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const inDoc = document.getElementById("indoc").checked;
+  const res = document.getElementById("results");
+  if (!q) { res.innerHTML = `<div class="more">Tippe zum Suchen. Mehrere Wörter = alle müssen passen.</div>`; return; }
+  const terms = q.split(/\s+/);
+  const scored = [];
+  for (const e of entries) {
+    if (kindFilter !== "all" && e.k !== kindFilter) continue;
+    let score = 0, ok = true;
+    for (const t of terms) {
+      if (e.lc === t || e.short === t) score += 100;
+      else if (e.short && e.short.startsWith(t)) score += 60;
+      else if (e.lc.startsWith(t)) score += 50;
+      else if (e.lc.includes(t)) score += 30;
+      else if (inDoc && e.doc.includes(t)) score += 5;
+      else { ok = false; break; }
+    }
+    if (ok) scored.push([score - e.name.length * 0.01 + (e.k === "fn" ? 1 : 0), e]);
+  }
+  scored.sort((a, b) => b[0] - a[0]);
+  const max = 300;
+  res.innerHTML = scored.slice(0, max).map(([, e]) => {
+    const s = DATA.systems[e.si];
+    const href = e.k === "sys" ? `#/s/${encodeURIComponent(s.n)}` : `#/s/${encodeURIComponent(s.n)}/${e.k}/${e.ii}`;
+    return `<a href="${href}"><span class="k">${KIND_LABEL[e.k]}</span><span class="mono">${esc(e.name)}</span><span class="sub mono">${esc(e.sub)}</span></a>`;
+  }).join("") + (scored.length > max ? `<div class="more">… ${scored.length - max} weitere, Suche verfeinern.</div>` : "") + (scored.length ? "" : `<div class="more">Nichts gefunden.</div>`);
+}
+
+// ---- Routing ----
+function route() {
+  const parts = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  if (parts[0] === "s") {
+    const si = DATA.systems.findIndex(s => s.n === parts[1]);
+    if (si >= 0) return renderSystem(si, parts[2], parts[3]);
+  }
+  if (parts[0] === "t" && typeMap.has(parts[1])) {
+    const [si, ii] = typeMap.get(parts[1]);
+    location.replace(`#/s/${encodeURIComponent(DATA.systems[si].n)}/tb/${ii}`);
+    return;
+  }
+  renderHome();
+}
+
+document.getElementById("q").addEventListener("input", search);
+document.getElementById("indoc").addEventListener("change", search);
+document.getElementById("filters").addEventListener("click", e => {
+  if (!e.target.dataset.k) return;
+  kindFilter = e.target.dataset.k;
+  for (const b of e.currentTarget.children) b.classList.toggle("on", b === e.target);
+  search();
+});
+document.getElementById("theme").addEventListener("click", () => {
+  const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("theme", document.documentElement.dataset.theme); } catch (e) {}
+});
+try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+window.addEventListener("hashchange", route);
+search();
+route();
+</script>
+</body>
+</html>

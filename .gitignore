@@ -1,0 +1,6 @@
+# Blizzards UI-Quellcode (eigener Klon, siehe README)
+/wow-ui-source/
+
+# Generiert von tools/build_api_reference.py
+/docs/api-reference.html
+/tools/.venv/
