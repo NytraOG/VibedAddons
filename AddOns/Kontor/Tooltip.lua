@@ -50,12 +50,22 @@ end
 local function AddPriceLines(tooltip, itemID)
 	local price, scanTime = ns.GetAuctionPrice(itemID)
 	local vendor = ns.GetVendorPrice(itemID)
-	if not price and not vendor then
+	local lastKnown, lastTime
+	if not price then
+		lastKnown, lastTime = ns.GetLastKnownPrice(itemID)
+	end
+	if not price and not vendor and not lastKnown then
 		return
 	end
 	local count = StackCount(tooltip)
 
-	if price then
+	if lastKnown then
+		tooltip:AddDoubleLine("AH Ø (zuletzt)", ns.Money(lastKnown.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+		if count > 1 then
+			tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.Money(lastKnown.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+		end
+		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(lastTime), GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
+	elseif price then
 		if price.top5 then
 			tooltip:AddDoubleLine("AH Ø", ns.Money(price.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 			if count > 1 then
