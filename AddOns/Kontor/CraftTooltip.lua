@@ -54,11 +54,14 @@ function ns.AddMarginLines(tooltip, recipe, ctx)
 	tooltip:AddDoubleLine("Materialkosten", m.complete and ns.Money(m.cost) or "unvollständig", GREY[1], GREY[2], GREY[3], 1, 1, 1)
 
 	if not m.unitPrice then
-		tooltip:AddLine("Ergebnis nicht im letzten AH-Scan: kein Verkaufswert.", 1, 0.4, 0.4, true)
+		tooltip:AddLine("Ergebnis nie im AH gesehen: kein Verkaufswert.", 1, 0.4, 0.4, true)
 		return
 	end
-	tooltip:AddDoubleLine(("Verkauf: %s x %s (AH Ø)"):format(QuantityText(recipe), ns.Money(m.unitPrice)), ns.Money(m.value),
-		GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	tooltip:AddDoubleLine(("Verkauf: %s x %s (AH Ø%s)"):format(QuantityText(recipe), ns.Money(m.unitPrice), m.priceStale and " zuletzt" or ""),
+		ns.Money(m.value), GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	if m.priceStale then
+		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(m.priceTime), 1, 0.65, 0.25, 1, 0.65, 0.25)
+	end
 	tooltip:AddDoubleLine(("AH-Gebühr %.1f %%%s"):format(m.cutRate * 100, m.cutMeasured and "" or " (angenommen)"),
 		"-" .. ns.Money(m.cut), GREY[1], GREY[2], GREY[3], 1, 1, 1)
 	if m.margin then

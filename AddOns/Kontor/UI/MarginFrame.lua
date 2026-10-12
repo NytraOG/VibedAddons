@@ -45,8 +45,15 @@ local COLUMNS = {
 		color = function(r) return ColorMargin(r.m.margin) end,
 		sort = function(r) return r.m.percent end },
 	{ key = "supply", title = "Im AH", width = 60, align = "RIGHT", defaultDesc = true,
-		text = function(r) return r.supply and tostring(r.supply) or "" end,
-		sort = function(r) return r.supply end },
+		text = function(r) return r.supply and tostring(r.supply) or "0" end,
+		-- Orange: ausverkauft, Marge basiert auf dem zuletzt bekannten Preis
+		color = function(r)
+			if r.m.priceStale then
+				return 1, 0.65, 0.25
+			end
+			return 1, 1, 1
+		end,
+		sort = function(r) return r.supply or 0 end },
 }
 
 local function ProfessionOptions()

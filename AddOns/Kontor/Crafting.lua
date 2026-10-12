@@ -105,6 +105,13 @@ function ns.RecipeMargin(recipe, ctx)
 	local m = { recipe = recipe, cost = cost, parts = parts, complete = complete, quantity = AverageQuantity(recipe) }
 	local ah = ns.GetAuctionPrice(recipe.out)
 	m.unitPrice = ah and ah.top5
+	if not m.unitPrice then
+		-- Ergebnis gerade ausverkauft: zuletzt bekannten Preis nehmen (keine Konkurrenz im AH)
+		local last, lastTime = ns.GetLastKnownPrice(recipe.out)
+		if last then
+			m.unitPrice, m.priceStale, m.priceTime = last.top5, true, lastTime
+		end
+	end
 	m.cutRate, m.cutMeasured = ns.AuctionCutRate()
 	if m.unitPrice then
 		m.value = m.unitPrice * m.quantity
