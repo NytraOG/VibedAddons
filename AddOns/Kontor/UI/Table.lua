@@ -4,8 +4,8 @@ local _, ns = ...
 --
 -- columns: { key, title, width (nil = Rest), align ("LEFT"|"RIGHT"|"CENTER"),
 --            text(row) -> string, color(row) -> r,g,b (optional), sort(row) -> Wert (optional),
---            money(row) -> Kupfer (statt text; spaltenbuendig, rechtsbuendig, sortiert nach Betrag),
---            trend(row) -> -2..2 (optional: Preis-Pfeile am linken Zellenrand) }
+--            money(row) -> Kupfer (statt text; Muenzen spaltenbuendig, rechtsbuendig, sortiert nach Betrag),
+--            trend(row) -> -2..2 (optional: Pfeile am linken Zellenrand), trendUpIsGood (Anstieg gruen) }
 -- opts:    { rowHeight, sortKey, sortDesc, onEnter(rowFrame, row), onClick(rowFrame, row, button) }
 
 local HEADER_HEIGHT = 20
@@ -20,13 +20,6 @@ local function SortValue(column, row)
 	return column.sort and column.sort(row) or column.text(row)
 end
 
-local function CellText(column, row, cell)
-	if column.money then
-		local copper = column.money(row)
-		return copper and ns.MoneyAligned(copper, cell:GetFontObject()) or ""
-	end
-	return column.text(row) or ""
-end
 
 function TableMixin:SetRows(rows)
 	self.rows = rows
@@ -141,9 +134,14 @@ function TableMixin:InitRow(rowFrame, row)
 	if not rowFrame.cells then
 		rowFrame.cells = {}
 		for i, column in ipairs(self.columns) do
-			local cell = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-			cell:SetJustifyH(column.align or (column.money and "RIGHT") or "LEFT")
-			cell:SetWordWrap(false)
+			local cell
+			if column.money then
+				cell = ns.CreateMoneyDisplay(rowFrame, GameFontHighlightSmall)
+			else
+				cell = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+				cell:SetJustifyH(column.align or "LEFT")
+				cell:SetWordWrap(false)
+			end
 			if column.trend then
 				cell.trend = { rowFrame:CreateTexture(nil, "OVERLAY"), rowFrame:CreateTexture(nil, "OVERLAY") }
 				cell.trend[1]:SetPoint("LEFT", cell, "LEFT")
@@ -175,9 +173,13 @@ function TableMixin:InitRow(rowFrame, row)
 	rowFrame.stripe:SetShown((row._tableIndex or 0) % 2 == 0)
 	for i, column in ipairs(self.columns) do
 		local cell = rowFrame.cells[i]
-		cell:SetText(CellText(column, row, cell))
+		if column.money then
+			cell:SetValue(column.money(row))
+		else
+			cell:SetText(column.text(row) or "")
+		end
 		if cell.trend then
-			ns.ApplyTrend(cell.trend, column.trend(row))
+			ns.ApplyTrend(cell.trend, column.trend(row), column.trendUpIsGood)
 		end
 		if column.color then
 			cell:SetTextColor(column.color(row))

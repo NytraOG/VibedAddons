@@ -30,14 +30,16 @@ local COLUMNS = {
 	{ key = "character", title = "Charakter", width = 95,
 		text = function(r) return r.characterName end,
 		sort = function(r) return r.characterName end },
-	-- Pfeile: Materialkosten gegenueber dem vorletzten Scan gestiegen (rot) oder gefallen (gruen)
-	{ key = "cost", title = "Material", width = 115, defaultDesc = true,
+	-- Pfeile: Aenderung gegenueber dem vorletzten Scan. Material teurer = rot, Erloes/Marge hoeher = gruen
+	{ key = "cost", title = "Material", width = 125, defaultDesc = true,
 		money = function(r) return r.m.cost end,
 		trend = function(r) return r.m.costTrend end },
-	{ key = "net", title = "Erlös netto", width = 100, defaultDesc = true,
-		money = function(r) return r.m.net end },
-	{ key = "margin", title = "Marge", width = 100, defaultDesc = true,
+	{ key = "net", title = "Erlös netto", width = 125, defaultDesc = true,
+		money = function(r) return r.m.net end,
+		trend = function(r) return r.m.netTrend end, trendUpIsGood = true },
+	{ key = "margin", title = "Marge", width = 125, defaultDesc = true,
 		money = function(r) return r.m.margin end,
+		trend = function(r) return r.m.marginTrend end, trendUpIsGood = true,
 		color = function(r) return ColorMargin(r.m.margin) end },
 	{ key = "percent", title = "Marge %", width = 70, align = "RIGHT", defaultDesc = true,
 		text = function(r) return r.m.percent and ("%+.0f %%"):format(r.m.percent) or "" end,
@@ -162,7 +164,7 @@ local function ShowRowTooltip(rowFrame, r)
 end
 
 local function CreateMarginFrame()
-	frame = ns.CreateWindow("KontorMarginFrame", "Kontor – Margen", 960, 540)
+	frame = ns.CreateWindow("KontorMarginFrame", "Kontor – Margen", 1030, 540)
 	frame:SetScript("OnShow", Refresh)
 
 	local professionDropdown = ns.CreateDropdown(frame, 170, ProfessionOptions,

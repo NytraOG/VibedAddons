@@ -44,9 +44,9 @@ local COLUMNS = {
 	{ key = "count", title = "Menge", width = 50, align = "RIGHT", defaultDesc = true,
 		text = function(e) return e.count and tostring(e.count) or "" end,
 		sort = function(e) return e.count end },
-	{ key = "price", title = "Preis", width = 105, defaultDesc = true,
+	{ key = "price", title = "Preis", width = 115, defaultDesc = true,
 		money = function(e) return e.price end },
-	{ key = "unit", title = "Stückpreis", width = 95, defaultDesc = true,
+	{ key = "unit", title = "Stückpreis", width = 105, defaultDesc = true,
 		money = function(e) return (e.price and e.count and e.count > 0) and e.price / e.count or nil end },
 	{ key = "party", title = "Käufer / Verkäufer", width = 120,
 		text = function(e) return e.party or (e.awaitingMail and "Post ausstehend") or "" end,
@@ -57,9 +57,9 @@ local COLUMNS = {
 			return 0.6, 0.6, 0.6
 		end,
 		sort = function(e) return e.party end },
-	{ key = "fees", title = "Gebühren", width = 95, defaultDesc = true,
+	{ key = "fees", title = "Gebühren", width = 100, defaultDesc = true,
 		money = Fees },
-	{ key = "net", title = "Netto", width = 105, defaultDesc = true,
+	{ key = "net", title = "Netto", width = 115, defaultDesc = true,
 		money = function(e) return e.net end },
 	{ key = "character", title = "Charakter", width = 85,
 		text = function(e) return e.character or "" end,
@@ -121,6 +121,8 @@ end
 
 ns.OnJournalChanged = Refresh
 
+local LABEL = { 0.8, 0.8, 0.8 }
+
 local function ShowEntryTooltip(rowFrame, e)
 	GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
 	if e.link then
@@ -138,19 +140,19 @@ local function ShowEntryTooltip(rowFrame, e)
 		GameTooltip:AddLine("Postrechnung noch nicht abgeholt: Käufer und endgültiger Betrag folgen.", 1, 0.82, 0, true)
 	end
 	if e.deposit then
-		GameTooltip:AddDoubleLine("Einstellgebühr", ns.MoneyAligned(e.deposit), 0.8, 0.8, 0.8, 1, 1, 1)
+		ns.AddMoneyLine(GameTooltip, "Einstellgebühr", e.deposit, { leftColor = LABEL })
 	end
 	if e.cut then
-		GameTooltip:AddDoubleLine("AH-Gebühr", ns.MoneyAligned(e.cut), 0.8, 0.8, 0.8, 1, 1, 1)
+		ns.AddMoneyLine(GameTooltip, "AH-Gebühr", e.cut, { leftColor = LABEL })
 	end
 	if e.cancelFee and e.cancelFee > 0 then
-		GameTooltip:AddDoubleLine("Abbruchgebühr", ns.MoneyAligned(e.cancelFee), 0.8, 0.8, 0.8, 1, 1, 1)
+		ns.AddMoneyLine(GameTooltip, "Abbruchgebühr", e.cancelFee, { leftColor = LABEL })
 	end
 	GameTooltip:Show()
 end
 
 local function CreateJournalFrame()
-	frame = ns.CreateWindow("KontorJournalFrame", "Kontor – Journal", 1040, 540)
+	frame = ns.CreateWindow("KontorJournalFrame", "Kontor – Journal", 1080, 540)
 	frame:SetScript("OnShow", Refresh)
 
 	local typeOptions = { { label = "Alle Typen", value = false } }

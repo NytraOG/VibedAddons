@@ -31,9 +31,8 @@ local function AddPartLines(tooltip, parts, multiplier, indent, ctx)
 		local left = ("%s%sx %s"):format(indent, qtyText, ns.ItemName(part.itemID))
 		local info = part.info
 		if info.cost then
-			local trend = ns.MaterialTrend(ctx, part.itemID, qty)
-			tooltip:AddDoubleLine(left .. "  " .. SOURCE_LABEL[info.source],
-				ns.TrendMarkup(trend) .. ns.MoneyAligned(info.cost * qty), 1, 1, 1, 1, 1, 1)
+			ns.AddMoneyLine(tooltip, left .. "  " .. SOURCE_LABEL[info.source], info.cost * qty,
+				{ trend = ns.MaterialTrend(ctx, part.itemID, qty) })
 			if info.source == "craft" then
 				if info.buy then
 					tooltip:AddLine(("%s    statt kaufen: %s (%s)"):format(indent, ns.Money(info.buy * qty),
@@ -54,30 +53,30 @@ function ns.AddMarginLines(tooltip, recipe, ctx)
 	tooltip:AddLine(" ")
 	tooltip:AddLine("Kontor – Marge", GOLD[1], GOLD[2], GOLD[3])
 	AddPartLines(tooltip, m.parts, 1, "", ctx)
-	tooltip:AddDoubleLine("Materialkosten", m.complete and (ns.TrendMarkup(m.costTrend) .. ns.MoneyAligned(m.cost)) or "unvollständig",
-		GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	if m.complete then
+		ns.AddMoneyLine(tooltip, "Materialkosten", m.cost, { leftColor = GREY, trend = m.costTrend })
+	else
+		tooltip:AddDoubleLine("Materialkosten", "unvollständig", GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	end
 
 	if not m.unitPrice then
 		tooltip:AddLine("Ergebnis nie im AH gesehen: kein Verkaufswert.", 1, 0.4, 0.4, true)
 		return
 	end
-	tooltip:AddDoubleLine(("Verkauf: %s x %s (AH Ø%s)"):format(QuantityText(recipe), ns.Money(m.unitPrice), m.priceStale and " zuletzt" or ""),
-		ns.MoneyAligned(m.value), GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	ns.AddMoneyLine(tooltip, ("Verkauf: %s x %s (AH Ø%s)"):format(QuantityText(recipe), ns.Money(m.unitPrice), m.priceStale and " zuletzt" or ""),
+		m.value, { leftColor = GREY, trend = m.netTrend, upIsGood = true })
 	if m.priceStale then
 		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(m.priceTime), 1, 0.65, 0.25, 1, 0.65, 0.25)
 	end
-	tooltip:AddDoubleLine(("AH-Gebühr %.1f %%%s"):format(m.cutRate * 100, m.cutMeasured and "" or " (angenommen)"),
-		ns.MoneyAligned(-m.cut), GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	ns.AddMoneyLine(tooltip, ("AH-Gebühr %.1f %%%s"):format(m.cutRate * 100, m.cutMeasured and "" or " (angenommen)"),
+		-m.cut, { leftColor = GREY })
 	if m.margin then
-		local r, g, b = 0.4, 1, 0.4
-		if m.margin < 0 then
-			r, g, b = 1, 0.4, 0.4
-		end
+		local color = m.margin < 0 and { 1, 0.4, 0.4 } or { 0.4, 1, 0.4 }
 		local left = "Netto-Marge"
 		if m.percent then
 			left = left .. " (" .. Percent(m.percent) .. ")"
 		end
-		tooltip:AddDoubleLine(left, ns.MoneyAligned(m.margin), GOLD[1], GOLD[2], GOLD[3], r, g, b)
+		ns.AddMoneyLine(tooltip, left, m.margin, { leftColor = GOLD, color = color, trend = m.marginTrend, upIsGood = true })
 	else
 		tooltip:AddLine("Marge nicht berechenbar: Für mindestens ein Material fehlt ein Preis.", 1, 0.4, 0.4, true)
 	end

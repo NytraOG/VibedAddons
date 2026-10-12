@@ -112,12 +112,6 @@ end
 function ns.RecipeMargin(recipe, ctx)
 	local cost, parts, complete = RecipeCost(recipe, ctx, 0)
 	local m = { recipe = recipe, cost = cost, parts = parts, complete = complete, quantity = AverageQuantity(recipe) }
-	if ctx.prev then
-		local prevCost, _, prevComplete = RecipeCost(recipe, ctx.prev, 0)
-		if complete and prevComplete then
-			m.costTrend = ns.PriceTrend(cost, prevCost)
-		end
-	end
 	local ah = ns.GetAuctionPrice(recipe.out)
 	m.unitPrice = ah and ah.top5
 	if not m.unitPrice then
@@ -135,6 +129,23 @@ function ns.RecipeMargin(recipe, ctx)
 		if complete then
 			m.margin = m.net - cost
 			m.percent = cost > 0 and m.margin / cost * 100 or nil
+		end
+	end
+
+	-- Pfeile: dieselbe Rechnung mit den Preisen des vorletzten Scans
+	if ctx.prev then
+		local prevCost, _, prevComplete = RecipeCost(recipe, ctx.prev, 0)
+		prevCost = prevComplete and prevCost or nil
+		local prevPrice = ns.GetPreviousPrice(recipe.out)
+		local prevNet = prevPrice and prevPrice.top5 * m.quantity * (1 - m.cutRate)
+		if complete and prevCost then
+			m.costTrend = ns.PriceTrend(cost, prevCost)
+		end
+		if m.net and prevNet then
+			m.netTrend = ns.PriceTrend(m.net, prevNet)
+		end
+		if m.margin and prevNet and prevCost then
+			m.marginTrend = ns.PriceTrend(m.margin, prevNet - prevCost)
 		end
 	end
 	return m

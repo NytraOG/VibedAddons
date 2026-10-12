@@ -60,19 +60,19 @@ local function AddPriceLines(tooltip, itemID)
 	local count = StackCount(tooltip)
 
 	if lastKnown then
-		tooltip:AddDoubleLine("AH Ø (zuletzt)", ns.MoneyAligned(lastKnown.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+		ns.AddMoneyLine(tooltip, "AH Ø (zuletzt)", lastKnown.top5, { leftColor = GOLD })
 		if count > 1 then
-			tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.MoneyAligned(lastKnown.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+			ns.AddMoneyLine(tooltip, ("AH Ø für %d Stück"):format(count), lastKnown.top5 * count, { leftColor = GOLD })
 		end
 		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(lastTime), GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
 	elseif price then
 		if price.top5 then
 			-- Pfeil: Aenderung gegenueber dem vorletzten Scan
 			local previous = ns.GetPreviousPrice(itemID)
-			local trend = ns.TrendMarkup(previous and ns.PriceTrend(price.top5, previous.top5))
-			tooltip:AddDoubleLine("AH Ø", trend .. ns.MoneyAligned(price.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+			local trend = previous and ns.PriceTrend(price.top5, previous.top5)
+			ns.AddMoneyLine(tooltip, "AH Ø", price.top5, { leftColor = GOLD, trend = trend })
 			if count > 1 then
-				tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.MoneyAligned(price.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+				ns.AddMoneyLine(tooltip, ("AH Ø für %d Stück"):format(count), price.top5 * count, { leftColor = GOLD })
 			end
 		else
 			tooltip:AddDoubleLine("AH", "nur Gebote, kein Sofortkauf", GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
@@ -81,9 +81,9 @@ local function AddPriceLines(tooltip, itemID)
 			GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
 	end
 	if vendor then
-		tooltip:AddDoubleLine("Händler-Einkauf", ns.MoneyAligned(vendor), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+		ns.AddMoneyLine(tooltip, "Händler-Einkauf", vendor, { leftColor = GOLD })
 		if count > 1 then
-			tooltip:AddDoubleLine(("Händler für %d Stück"):format(count), ns.MoneyAligned(vendor * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+			ns.AddMoneyLine(tooltip, ("Händler für %d Stück"):format(count), vendor * count, { leftColor = GOLD })
 		end
 	end
 end

@@ -64,16 +64,17 @@ function ns.GetPreviousPrice(itemID)
 	end
 end
 
--- Richtung und Staerke einer Preisaenderung: 2/1 teurer, -1/-2 billiger, 0 unveraendert
+-- Richtung und Staerke einer Aenderung: 2/1 gestiegen, -1/-2 gefallen, 0 unveraendert.
+-- Relativ zum Betrag des alten Werts, damit es auch fuer Margen um null oder darunter taugt.
 function ns.PriceTrend(now, before)
-	if not now or not before or before <= 0 then
+	if not now or not before then
 		return 0
 	end
 	local diff = now - before
 	if math.abs(diff) < TREND_MIN_COPPER then
 		return 0
 	end
-	local change = math.abs(diff) / before
+	local change = before ~= 0 and math.abs(diff) / math.abs(before) or math.huge
 	local level = 0
 	if change >= TREND_LARGE then
 		level = 2
