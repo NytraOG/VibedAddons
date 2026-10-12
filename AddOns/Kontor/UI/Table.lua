@@ -5,11 +5,12 @@ local _, ns = ...
 -- columns: { key, title, width (nil = Rest), align ("LEFT"|"RIGHT"|"CENTER"),
 --            text(row) -> string, color(row) -> r,g,b (optional), sort(row) -> Wert (optional),
 --            money(row) -> Kupfer (statt text; Muenzen spaltenbuendig, rechtsbuendig, sortiert nach Betrag),
---            trend(row) -> -2..2 (optional: Pfeile am linken Zellenrand), trendUpIsGood (Anstieg gruen) }
+--            trend(row) -> -2..2 (optional, nur mit money: Pfeile vor dem Betrag), trendUpIsGood (Anstieg gruen) }
 -- opts:    { rowHeight, sortKey, sortDesc, onEnter(rowFrame, row), onClick(rowFrame, row, button) }
 
 local HEADER_HEIGHT = 20
 local PADDING = 4
+local TREND_GAP = 4
 
 local TableMixin = {}
 
@@ -118,6 +119,46 @@ function TableMixin:Layout()
 	end)
 end
 
+-- Pfeile stehen pro Spalte untereinander, rechtsbuendig direkt links vom breitesten sichtbaren Betrag
+function TableMixin:AnchorTrends(rowFrame)
+	for i, cell in ipairs(rowFrame.cells) do
+		if cell.trend then
+			cell.trend[1]:ClearAllPoints()
+			cell.trend[1]:SetPoint("RIGHT", cell, "RIGHT", -(self.trendOffset[i] or 0), 0)
+		end
+	end
+end
+
+function TableMixin:LayoutTrends()
+	self.trendQueued = false
+	local widest = {}
+	self.ScrollBox:ForEachFrame(function(rowFrame)
+		for i, cell in ipairs(rowFrame.cells or {}) do
+			if cell.trend then
+				widest[i] = math.max(widest[i] or 0, cell:GetContentWidth())
+			end
+		end
+	end)
+	for i, width in pairs(widest) do
+		self.trendOffset[i] = math.ceil(width) + TREND_GAP
+	end
+	self.ScrollBox:ForEachFrame(function(rowFrame)
+		if rowFrame.cells then
+			self:AnchorTrends(rowFrame)
+		end
+	end)
+end
+
+-- Nach dem Befuellen/Scrollen einmal pro Frame neu ausrichten
+function TableMixin:QueueTrendLayout()
+	if not self.trendQueued then
+		self.trendQueued = true
+		C_Timer.After(0, function()
+			self:LayoutTrends()
+		end)
+	end
+end
+
 function TableMixin:LayoutRow(rowFrame)
 	if not self.layout then
 		return
@@ -144,8 +185,7 @@ function TableMixin:InitRow(rowFrame, row)
 			end
 			if column.trend then
 				cell.trend = { rowFrame:CreateTexture(nil, "OVERLAY"), rowFrame:CreateTexture(nil, "OVERLAY") }
-				cell.trend[1]:SetPoint("LEFT", cell, "LEFT")
-				cell.trend[2]:SetPoint("LEFT", cell.trend[1], "RIGHT", -1, 0)
+				cell.trend[2]:SetPoint("RIGHT", cell.trend[1], "LEFT", 1, 0)
 			end
 			rowFrame.cells[i] = cell
 		end
@@ -168,6 +208,7 @@ function TableMixin:InitRow(rowFrame, row)
 			end
 		end)
 		self:LayoutRow(rowFrame)
+		self:AnchorTrends(rowFrame)
 	end
 	rowFrame.row = row
 	rowFrame.stripe:SetShown((row._tableIndex or 0) % 2 == 0)
@@ -180,6 +221,7 @@ function TableMixin:InitRow(rowFrame, row)
 		end
 		if cell.trend then
 			ns.ApplyTrend(cell.trend, column.trend(row), column.trendUpIsGood)
+			self:QueueTrendLayout()
 		end
 		if column.color then
 			cell:SetTextColor(column.color(row))
@@ -239,5 +281,6 @@ function ns.CreateTable(parent, columns, opts)
 		t:Layout()
 	end)
 	t.rows = {}
+	t.trendOffset = {}
 	return t
 end
