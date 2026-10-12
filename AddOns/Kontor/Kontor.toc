@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Kontor
 ## Notes: Finanz-Journal, Auktionshaus-Scan, Preis-Tooltips und Margenrechner
-## Version: 0.5.2
+## Version: 0.6.0
 ## SavedVariables: KontorDB
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## AddonCompartmentFunc: Kontor_OnAddonCompartmentClick
@@ -22,3 +22,4 @@ UI\Table.lua
 UI\JournalFrame.lua
 UI\MarginFrame.lua
 UI\MinimapButton.lua
+UI\Options.lua

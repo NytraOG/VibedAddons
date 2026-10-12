@@ -48,6 +48,9 @@ local function StackCount(tooltip)
 end
 
 local function AddPriceLines(tooltip, itemID)
+	if not ns.db.settings.tooltipPrices then
+		return
+	end
 	local price, scanTime = ns.GetAuctionPrice(itemID)
 	local vendor = ns.GetVendorPrice(itemID)
 	local lastKnown, lastTime
@@ -68,7 +71,7 @@ local function AddPriceLines(tooltip, itemID)
 	elseif price then
 		if price.top5 then
 			-- Pfeil: Aenderung gegenueber dem vorletzten Scan
-			local previous = ns.GetPreviousPrice(itemID)
+			local previous = ns.db.settings.tooltipTrend and ns.GetPreviousPrice(itemID)
 			local trend = previous and ns.PriceTrend(price.top5, previous.top5)
 			ns.AddMoneyLine(tooltip, "AH Ø", price.top5, { leftColor = GOLD, trend = trend })
 			if count > 1 then

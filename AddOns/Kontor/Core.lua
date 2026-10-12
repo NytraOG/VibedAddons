@@ -2,6 +2,19 @@ local ADDON_NAME, ns = ...
 
 local DB_VERSION = 1
 
+-- Standardwerte fuer ns.db.settings (einstellbar unter Optionen → AddOns → Kontor)
+ns.DEFAULTS = {
+	trendSignificant = 10, -- % Aenderung fuer einen Pfeil
+	trendLarge = 25, -- % fuer zwei Pfeile
+	trendMinCopper = 10, -- kleinere Aenderungen bekommen nie einen Pfeil
+	trendMinAgeHours = 0, -- Vergleichsscan mindestens so alt (0 = vorletzter Scan)
+	tooltipPrices = true, -- AH- und Haendlerpreise in Item-Tooltips
+	tooltipTrend = true, -- Pfeil am AH-Preis in Item-Tooltips
+	tooltipMargins = true, -- Margen-Aufstellung im Berufe-Fenster
+	defaultCutRate = 5, -- % AH-Gebuehr, solange keine eigenen Verkaeufe sie belegen (Annahme)
+	historyLimit = 100, -- gespeicherte Scans
+}
+
 -- ---- Event-Verteiler -------------------------------------------------------
 
 local eventFrame = CreateFrame("Frame")
@@ -36,7 +49,11 @@ local function InitDB()
 	db.version = db.version or DB_VERSION
 	db.realms = db.realms or {}
 	db.settings = db.settings or {}
-	db.settings.historyLimit = db.settings.historyLimit or 100
+	for key, value in pairs(ns.DEFAULTS) do
+		if db.settings[key] == nil then
+			db.settings[key] = value
+		end
+	end
 	db.sessions = (db.sessions or 0) + 1
 	ns.db = db
 end
@@ -100,6 +117,7 @@ local function Help()
 	ns.Print("  /kontor scan – Komplett-Scan (Auktionshaus muss offen sein; \"force\" ignoriert die Sperrzeit)")
 	ns.Print("  /kontor status – gespeicherte Daten anzeigen")
 	ns.Print("  /kontor minimap – Minimap-Button ein-/ausblenden")
+	ns.Print("  /kontor optionen – Optionen öffnen")
 end
 
 SLASH_KONTOR1 = "/kontor"

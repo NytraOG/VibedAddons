@@ -75,6 +75,7 @@ Wiederverwendbare Bausteine in Kontor, die man kopieren und anpassen kann:
   - `GetFilteredRecipeIDs` hängt von UI-Filtern ab.
   - Ergebnis-Item-Tooltip: `getterName == "GetRecipeResultItem"`. Er wird jeden Frame neu gesetzt.
 - **UI:** `BasicFrameTemplateWithInset` (`.TitleText`), `WowScrollBoxList` + `MinimalScrollBar` + `CreateScrollBoxListLinearView` (`SetElementInitializer("Button", fn)` braucht `SetElementExtent`), `WowStyle1DropdownTemplate` mit `SetupMenu`/`CreateRadio`, `MenuUtil.CreateContextMenu`, `SearchBoxTemplate`. Die Standardschrift kennt keine Pfeil-Unicode-Zeichen.
+- **Geldbeträge in Spalten:** Rechtsbündiger Text ist nicht pixelgenau (WoW rundet Glyphen beim Rendern anders als `GetStringWidth`), daher springen Münz-Icons aus `GetMoneyString` um 1–3 px. Lösung: eigene FontStrings und Texturen (Atlas `coin-gold`/`coin-silver`/`coin-copper`) in festen Abständen vom rechten Rand, siehe `ns.CreateMoneyDisplay` und `ns.AddMoneyLine` in `AddOns/Kontor/UI/Widgets.lua`. Pfeil-Atlanten: `ui-hud-actionbar-pageuparrow-up`/`pagedownarrow-up` (entsättigt einfärbbar), Zahnrad: `questlog-icon-setting`.
 - **Baganator/Syndicator** im Client: Die Autoren untersagen, ihren Code als Referenz zu nutzen. Daran halten; Blizzards Code genügt.
 
 ## User-Präferenzen
@@ -84,5 +85,5 @@ Wiederverwendbare Bausteine in Kontor, die man kopieren und anpassen kann:
 
 ## Addons
 
-- **Kontor** (`/kontor`, v0.4.0, im Spiel getestet): Finanz-Journal (AH-Verkäufe, Käufe, Abgelaufen, Abgebrochen aus Events und Postbelegen), AH-Komplett-Scan mit Snapshot und Verlauf, Preis-Tooltips (Ø der 5 günstigsten Angebote, Ausreißer über dem 10-Fachen ausgenommen), Margenrechner im Berufe-Fenster (Zwischenprodukte günstigster Weg aus kaufen oder herstellen), Margen-Liste.
+- **Kontor** (`/kontor`, v0.6.0; bis 0.5.2 im Spiel getestet): Finanz-Journal (AH-Verkäufe, Käufe, Abgelaufen, Abgebrochen aus Events und Postbelegen), AH-Komplett-Scan mit Snapshot und Verlauf, Preis-Tooltips (Ø der 5 günstigsten Angebote, Ausreißer über dem 10-Fachen ausgenommen), Margenrechner im Berufe-Fenster (Zwischenprodukte günstigster Weg aus kaufen oder herstellen), Margen-Liste, Preis-Pfeile gegenüber einem älteren Scan (Material, Erlös, Marge, AH Ø), Optionen im Blizzard-Menü und per Zahnrad im Fenster (Werte in `ns.db.settings`, Standards in `ns.DEFAULTS`).
 - **Sanity Enricher** (`/sanity`, v0.1.0, im Spiel getestet): QoL-Sammlung mit Modulen. Quests automatisch annehmen und abgeben (Halt bei Belohnungswahl), Müll verkaufen, reparieren (Gildenbank zuerst). Shift = Pause, Optionen im Blizzard-Menü (Proxy-Settings). Neue Module: Datei anlegen, Standardwerte als Unterbereich in `ns.DEFAULTS` (Core.lua), Checkboxen in `UI/Options.lua`.

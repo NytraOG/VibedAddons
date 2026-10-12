@@ -1,11 +1,9 @@
 local _, ns = ...
 
--- Schwellen fuer Preis-Pfeile (Aenderung gegenueber dem vorletzten Scan). Annahme, abgeleitet aus den
--- eigenen Scans (Abstand ca. 20 Min.): Bei Materialien schwankt der Ø der 5 guenstigsten Angebote bei
--- rund 30 % der Items um 5 % oder mehr (Rauschen), bei 10-20 % um 10 % oder mehr, kaum je um 25 %.
-local TREND_SIGNIFICANT = 0.10 -- ein Pfeil
-local TREND_LARGE = 0.25 -- zwei Pfeile
-local TREND_MIN_COPPER = 10 -- kleinere Aenderungen zaehlen nie (z.B. 5 auf 7 Kupfer)
+-- Schwellen fuer Preis-Pfeile stehen in ns.db.settings (trendSignificant, trendLarge, trendMinCopper).
+-- Standard 10 % / 25 % / 10 Kupfer ist eine Annahme, abgeleitet aus den eigenen Scans (Abstand ca.
+-- 20 Min.): Bei Materialien schwankt der Ø der 5 guenstigsten Angebote bei rund 30 % der Items um 5 %
+-- oder mehr (Rauschen), bei 10-20 % um 10 % oder mehr, kaum je um 25 %.
 
 local function ParseHistoryEntry(entry)
 	local top5, minimum, quantity, auctions = entry:match("^(%d+):(%d+):(%d+):(%d+)$")
@@ -39,16 +37,19 @@ function ns.GetLastKnownPrice(itemID)
 	end
 end
 
--- Der Scan vor dem letzten: Vergleichsbasis fuer die Preis-Pfeile. nil, wenn es keinen gibt.
+-- Vergleichsbasis fuer die Preis-Pfeile: der juengste Scan vor dem letzten, der mindestens
+-- trendMinAgeHours aelter ist. nil, wenn es keinen gibt.
 function ns.PreviousSnapshot()
 	local realm = ns.RealmData()
 	local last = realm.lastScan and realm.lastScan.meta.time
 	if not last then
 		return nil
 	end
+	local latest = last - ns.db.settings.trendMinAgeHours * 3600
 	for i = #realm.history, 1, -1 do
 		local snapshot = realm.history[i]
-		if snapshot.meta.time < last then
+		local t = snapshot.meta.time
+		if t < last and t <= latest then
 			return snapshot
 		end
 	end
@@ -70,15 +71,16 @@ function ns.PriceTrend(now, before)
 	if not now or not before then
 		return 0
 	end
+	local s = ns.db.settings
 	local diff = now - before
-	if math.abs(diff) < TREND_MIN_COPPER then
+	if math.abs(diff) < s.trendMinCopper then
 		return 0
 	end
-	local change = before ~= 0 and math.abs(diff) / math.abs(before) or math.huge
+	local change = before ~= 0 and math.abs(diff) / math.abs(before) * 100 or math.huge
 	local level = 0
-	if change >= TREND_LARGE then
+	if change >= math.max(s.trendLarge, s.trendSignificant) then
 		level = 2
-	elseif change >= TREND_SIGNIFICANT then
+	elseif change >= s.trendSignificant then
 		level = 1
 	end
 	return diff < 0 and -level or level

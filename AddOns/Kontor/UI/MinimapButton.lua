@@ -82,9 +82,18 @@ end
 
 ns.On("PLAYER_LOGIN", CreateButton)
 
+function ns.IsMinimapButtonShown()
+	return not Settings().hide
+end
+
+function ns.SetMinimapButtonShown(shown)
+	Settings().hide = not shown
+	if button then
+		button:SetShown(shown)
+	end
+end
+
 ns.commands.minimap = function()
-	local s = Settings()
-	s.hide = not s.hide
-	button:SetShown(not s.hide)
-	ns.Print(s.hide and "Minimap-Button ausgeblendet." or "Minimap-Button eingeblendet.")
+	ns.SetMinimapButtonShown(not ns.IsMinimapButtonShown())
+	ns.Print(ns.IsMinimapButtonShown() and "Minimap-Button eingeblendet." or "Minimap-Button ausgeblendet.")
 end

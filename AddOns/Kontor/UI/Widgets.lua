@@ -16,6 +16,22 @@ function ns.CreateWindow(name, title, width, height)
 	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 	frame.TitleText:SetText(title)
 	table.insert(UISpecialFrames, name)
+
+	-- Zahnrad links neben dem Schliessen-Knopf: Optionen
+	local options = CreateFrame("Button", nil, frame)
+	options:SetSize(16, 16)
+	options:SetPoint("RIGHT", frame.CloseButton, "LEFT", -2, 0)
+	options:SetNormalAtlas("questlog-icon-setting")
+	options:SetHighlightAtlas("questlog-icon-setting", "ADD")
+	options:SetScript("OnClick", function()
+		ns.OpenOptions()
+	end)
+	options:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_TOP")
+		GameTooltip:SetText("Optionen")
+		GameTooltip:Show()
+	end)
+	options:SetScript("OnLeave", GameTooltip_Hide)
 	frame:Hide()
 	return frame
 end

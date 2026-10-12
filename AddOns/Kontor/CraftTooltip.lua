@@ -90,7 +90,7 @@ end
 -- abgeschnittenem Namen einen Tooltip)
 EventRegistry:RegisterCallback("Professions.RecipeListOnEnter", function(_, button, data)
 	local info = data and data.recipeInfo
-	if not info or not ns.db then
+	if not info or not ns.db or not ns.db.settings.tooltipMargins then
 		return
 	end
 	if Professions and Professions.GetHighestLearnedRecipe then
@@ -116,7 +116,7 @@ end, ns)
 -- Ergebnis-Item im Rezept-Detail (Blizzard aktualisiert diesen Tooltip jeden Frame)
 function ns.AddRecipeResultLines(tooltip)
 	local info = tooltip.processingInfo
-	if not info or info.getterName ~= "GetRecipeResultItem" or not info.getterArgs then
+	if not info or info.getterName ~= "GetRecipeResultItem" or not info.getterArgs or not ns.db.settings.tooltipMargins then
 		return
 	end
 	local recipe = ns.RecipeFromSchematic(info.getterArgs[1])

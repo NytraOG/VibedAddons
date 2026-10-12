@@ -11,7 +11,6 @@ local _, ns = ...
 -- Die Einstellgebuehr zaehlt nicht, weil sie bei Verkauf zurueckkommt.
 
 local MAX_DEPTH = 6
-local DEFAULT_CUT_RATE = 0.05
 
 -- ctx = { character, profession, memo = {}, visiting = {}, auctionPrice = fn, prev = ctx|nil }
 -- prev rechnet dasselbe mit den Preisen des vorletzten Scans (fuer die Preis-Pfeile).
@@ -94,7 +93,7 @@ RecipeCost = function(recipe, ctx, depth)
 	return total, parts, complete
 end
 
--- AH-Gebuehr aus den eigenen Verkaeufen ablesen (Postrechnungen), sonst 5 %
+-- AH-Gebuehr aus den eigenen Verkaeufen ablesen (Postrechnungen), sonst die angenommene aus den Optionen
 function ns.AuctionCutRate()
 	local cut, gross = 0, 0
 	for _, e in ipairs(ns.RealmData().journal) do
@@ -105,7 +104,7 @@ function ns.AuctionCutRate()
 	if gross > 0 then
 		return cut / gross, true
 	end
-	return DEFAULT_CUT_RATE, false
+	return ns.db.settings.defaultCutRate / 100, false
 end
 
 -- Vollstaendige Margenrechnung fuer ein Rezept
