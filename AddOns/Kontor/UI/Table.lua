@@ -3,7 +3,9 @@ local _, ns = ...
 -- Sortierbare Tabelle auf Basis von Blizzards ScrollBox.
 --
 -- columns: { key, title, width (nil = Rest), align ("LEFT"|"RIGHT"|"CENTER"),
---            text(row) -> string, color(row) -> r,g,b (optional), sort(row) -> Wert (optional) }
+--            text(row) -> string, color(row) -> r,g,b (optional), sort(row) -> Wert (optional),
+--            money(row) -> Kupfer (statt text; spaltenbuendig, rechtsbuendig, sortiert nach Betrag),
+--            trend(row) -> -2..2 (optional: Preis-Pfeile am linken Zellenrand) }
 -- opts:    { rowHeight, sortKey, sortDesc, onEnter(rowFrame, row), onClick(rowFrame, row, button) }
 
 local HEADER_HEIGHT = 20
@@ -12,11 +14,18 @@ local PADDING = 4
 local TableMixin = {}
 
 local function SortValue(column, row)
-	local v = column.sort and column.sort(row) or column.text(row)
-	if v == nil then
-		return nil
+	if column.money and not column.sort then
+		return column.money(row)
 	end
-	return v
+	return column.sort and column.sort(row) or column.text(row)
+end
+
+local function CellText(column, row, cell)
+	if column.money then
+		local copper = column.money(row)
+		return copper and ns.MoneyAligned(copper, cell:GetFontObject()) or ""
+	end
+	return column.text(row) or ""
 end
 
 function TableMixin:SetRows(rows)
@@ -133,8 +142,13 @@ function TableMixin:InitRow(rowFrame, row)
 		rowFrame.cells = {}
 		for i, column in ipairs(self.columns) do
 			local cell = rowFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-			cell:SetJustifyH(column.align or "LEFT")
+			cell:SetJustifyH(column.align or (column.money and "RIGHT") or "LEFT")
 			cell:SetWordWrap(false)
+			if column.trend then
+				cell.trend = { rowFrame:CreateTexture(nil, "OVERLAY"), rowFrame:CreateTexture(nil, "OVERLAY") }
+				cell.trend[1]:SetPoint("LEFT", cell, "LEFT")
+				cell.trend[2]:SetPoint("LEFT", cell.trend[1], "RIGHT", -1, 0)
+			end
 			rowFrame.cells[i] = cell
 		end
 		local highlight = rowFrame:CreateTexture(nil, "HIGHLIGHT")
@@ -161,7 +175,10 @@ function TableMixin:InitRow(rowFrame, row)
 	rowFrame.stripe:SetShown((row._tableIndex or 0) % 2 == 0)
 	for i, column in ipairs(self.columns) do
 		local cell = rowFrame.cells[i]
-		cell:SetText(column.text(row) or "")
+		cell:SetText(CellText(column, row, cell))
+		if cell.trend then
+			ns.ApplyTrend(cell.trend, column.trend(row))
+		end
 		if column.color then
 			cell:SetTextColor(column.color(row))
 		else
@@ -187,7 +204,7 @@ function ns.CreateTable(parent, columns, opts)
 		header.Text = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		header.Text:SetPoint("LEFT", PADDING, 0)
 		header.Text:SetPoint("RIGHT", -PADDING, 0)
-		header.Text:SetJustifyH(column.align or "LEFT")
+		header.Text:SetJustifyH(column.align or (column.money and "RIGHT") or "LEFT")
 		local hl = header:CreateTexture(nil, "HIGHLIGHT")
 		hl:SetAllPoints()
 		hl:SetColorTexture(1, 1, 1, 0.08)

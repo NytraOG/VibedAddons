@@ -23,14 +23,17 @@ local function QuantityText(recipe)
 	return ("%d–%d"):format(recipe.qmin, recipe.qmax)
 end
 
-local function AddPartLines(tooltip, parts, multiplier, indent)
+-- Rechte Spalte nur Betraege (spaltenbuendig); Bezugsquelle steht links hinter dem Namen
+local function AddPartLines(tooltip, parts, multiplier, indent, ctx)
 	for _, part in ipairs(parts) do
 		local qty = part.qty * multiplier
 		local qtyText = qty % 1 == 0 and tostring(qty) or ("%.1f"):format(qty)
 		local left = ("%s%sx %s"):format(indent, qtyText, ns.ItemName(part.itemID))
 		local info = part.info
 		if info.cost then
-			tooltip:AddDoubleLine(left, ns.Money(info.cost * qty) .. " " .. SOURCE_LABEL[info.source], 1, 1, 1, 1, 1, 1)
+			local trend = ns.MaterialTrend(ctx, part.itemID, qty)
+			tooltip:AddDoubleLine(left .. "  " .. SOURCE_LABEL[info.source],
+				ns.TrendMarkup(trend) .. ns.MoneyAligned(info.cost * qty), 1, 1, 1, 1, 1, 1)
 			if info.source == "craft" then
 				if info.buy then
 					tooltip:AddLine(("%s    statt kaufen: %s (%s)"):format(indent, ns.Money(info.buy * qty),
@@ -38,7 +41,7 @@ local function AddPartLines(tooltip, parts, multiplier, indent)
 				end
 				-- Zwischenprodukt: Basismaterialien eine Ebene tiefer anzeigen
 				local perCraft = qty / ((info.recipe.qmin + info.recipe.qmax) / 2)
-				AddPartLines(tooltip, info.parts, perCraft, indent .. "    ")
+				AddPartLines(tooltip, info.parts, perCraft, indent .. "    ", ctx)
 			end
 		else
 			tooltip:AddDoubleLine(left, "|cffff6060kein Preis|r", 1, 1, 1)
@@ -50,30 +53,31 @@ function ns.AddMarginLines(tooltip, recipe, ctx)
 	local m = ns.RecipeMargin(recipe, ctx)
 	tooltip:AddLine(" ")
 	tooltip:AddLine("Kontor – Marge", GOLD[1], GOLD[2], GOLD[3])
-	AddPartLines(tooltip, m.parts, 1, "")
-	tooltip:AddDoubleLine("Materialkosten", m.complete and ns.Money(m.cost) or "unvollständig", GREY[1], GREY[2], GREY[3], 1, 1, 1)
+	AddPartLines(tooltip, m.parts, 1, "", ctx)
+	tooltip:AddDoubleLine("Materialkosten", m.complete and (ns.TrendMarkup(m.costTrend) .. ns.MoneyAligned(m.cost)) or "unvollständig",
+		GREY[1], GREY[2], GREY[3], 1, 1, 1)
 
 	if not m.unitPrice then
 		tooltip:AddLine("Ergebnis nie im AH gesehen: kein Verkaufswert.", 1, 0.4, 0.4, true)
 		return
 	end
 	tooltip:AddDoubleLine(("Verkauf: %s x %s (AH Ø%s)"):format(QuantityText(recipe), ns.Money(m.unitPrice), m.priceStale and " zuletzt" or ""),
-		ns.Money(m.value), GREY[1], GREY[2], GREY[3], 1, 1, 1)
+		ns.MoneyAligned(m.value), GREY[1], GREY[2], GREY[3], 1, 1, 1)
 	if m.priceStale then
 		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(m.priceTime), 1, 0.65, 0.25, 1, 0.65, 0.25)
 	end
 	tooltip:AddDoubleLine(("AH-Gebühr %.1f %%%s"):format(m.cutRate * 100, m.cutMeasured and "" or " (angenommen)"),
-		"-" .. ns.Money(m.cut), GREY[1], GREY[2], GREY[3], 1, 1, 1)
+		ns.MoneyAligned(-m.cut), GREY[1], GREY[2], GREY[3], 1, 1, 1)
 	if m.margin then
 		local r, g, b = 0.4, 1, 0.4
 		if m.margin < 0 then
 			r, g, b = 1, 0.4, 0.4
 		end
-		local right = ns.Money(m.margin)
+		local left = "Netto-Marge"
 		if m.percent then
-			right = right .. "  (" .. Percent(m.percent) .. ")"
+			left = left .. " (" .. Percent(m.percent) .. ")"
 		end
-		tooltip:AddDoubleLine("Netto-Marge", right, GOLD[1], GOLD[2], GOLD[3], r, g, b)
+		tooltip:AddDoubleLine(left, ns.MoneyAligned(m.margin), GOLD[1], GOLD[2], GOLD[3], r, g, b)
 	else
 		tooltip:AddLine("Marge nicht berechenbar: Für mindestens ein Material fehlt ein Preis.", 1, 0.4, 0.4, true)
 	end

@@ -13,14 +13,23 @@ local _, ns = ...
 local MAX_DEPTH = 6
 local DEFAULT_CUT_RATE = 0.05
 
--- ctx = { character, profession, memo = {}, visiting = {} }
-function ns.CraftContext(character, profession)
-	return { character = character, profession = profession, memo = {}, visiting = {} }
+-- ctx = { character, profession, memo = {}, visiting = {}, auctionPrice = fn, prev = ctx|nil }
+-- prev rechnet dasselbe mit den Preisen des vorletzten Scans (fuer die Preis-Pfeile).
+local function NewContext(character, profession, auctionPrice)
+	return { character = character, profession = profession, memo = {}, visiting = {}, auctionPrice = auctionPrice }
 end
 
-local function BuyPrice(itemID)
+function ns.CraftContext(character, profession)
+	local ctx = NewContext(character, profession, ns.GetAuctionPrice)
+	if ns.PreviousSnapshot() then
+		ctx.prev = NewContext(character, profession, ns.GetPreviousPrice)
+	end
+	return ctx
+end
+
+local function BuyPrice(itemID, ctx)
 	local best, source
-	local ah = ns.GetAuctionPrice(itemID)
+	local ah = ctx.auctionPrice(itemID)
 	if ah and ah.top5 then
 		best, source = ah.top5, "ah"
 	end
@@ -44,7 +53,7 @@ local function ItemCost(itemID, ctx, depth)
 		return cached
 	end
 	local result = {}
-	result.buy, result.buySource = BuyPrice(itemID)
+	result.buy, result.buySource = BuyPrice(itemID, ctx)
 
 	if depth < MAX_DEPTH and not ctx.visiting[itemID] and ctx.character and ctx.profession then
 		ctx.visiting[itemID] = true
@@ -103,6 +112,12 @@ end
 function ns.RecipeMargin(recipe, ctx)
 	local cost, parts, complete = RecipeCost(recipe, ctx, 0)
 	local m = { recipe = recipe, cost = cost, parts = parts, complete = complete, quantity = AverageQuantity(recipe) }
+	if ctx.prev then
+		local prevCost, _, prevComplete = RecipeCost(recipe, ctx.prev, 0)
+		if complete and prevComplete then
+			m.costTrend = ns.PriceTrend(cost, prevCost)
+		end
+	end
 	local ah = ns.GetAuctionPrice(recipe.out)
 	m.unitPrice = ah and ah.top5
 	if not m.unitPrice then
@@ -123,6 +138,15 @@ function ns.RecipeMargin(recipe, ctx)
 		end
 	end
 	return m
+end
+
+-- Pfeil fuer qty Stueck eines Materials (nach ns.RecipeMargin mit demselben ctx)
+function ns.MaterialTrend(ctx, itemID, qty)
+	local now, before = ctx.memo[itemID], ctx.prev and ctx.prev.memo[itemID]
+	if now and now.cost and before and before.cost then
+		return ns.PriceTrend(now.cost * qty, before.cost * qty)
+	end
+	return 0
 end
 
 function ns.ItemName(itemID)

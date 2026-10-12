@@ -21,10 +21,6 @@ local PERIODS = {
 local frame
 local filter = { type = nil, period = 1, search = "" }
 
-local function Money(v)
-	return v and ns.Money(v) or ""
-end
-
 local function Fees(e)
 	if e.t == "sale" then
 		return e.cut
@@ -48,12 +44,10 @@ local COLUMNS = {
 	{ key = "count", title = "Menge", width = 50, align = "RIGHT", defaultDesc = true,
 		text = function(e) return e.count and tostring(e.count) or "" end,
 		sort = function(e) return e.count end },
-	{ key = "price", title = "Preis", width = 100, align = "RIGHT", defaultDesc = true,
-		text = function(e) return Money(e.price) end,
-		sort = function(e) return e.price end },
-	{ key = "unit", title = "Stückpreis", width = 90, align = "RIGHT", defaultDesc = true,
-		text = function(e) return (e.price and e.count and e.count > 0) and ns.Money(e.price / e.count) or "" end,
-		sort = function(e) return (e.price and e.count and e.count > 0) and e.price / e.count or nil end },
+	{ key = "price", title = "Preis", width = 105, defaultDesc = true,
+		money = function(e) return e.price end },
+	{ key = "unit", title = "Stückpreis", width = 95, defaultDesc = true,
+		money = function(e) return (e.price and e.count and e.count > 0) and e.price / e.count or nil end },
 	{ key = "party", title = "Käufer / Verkäufer", width = 120,
 		text = function(e) return e.party or (e.awaitingMail and "Post ausstehend") or "" end,
 		color = function(e)
@@ -63,12 +57,10 @@ local COLUMNS = {
 			return 0.6, 0.6, 0.6
 		end,
 		sort = function(e) return e.party end },
-	{ key = "fees", title = "Gebühren", width = 90, align = "RIGHT", defaultDesc = true,
-		text = function(e) return Money(Fees(e)) end,
-		sort = Fees },
-	{ key = "net", title = "Netto", width = 100, align = "RIGHT", defaultDesc = true,
-		text = function(e) return Money(e.net) end,
-		sort = function(e) return e.net end },
+	{ key = "fees", title = "Gebühren", width = 95, defaultDesc = true,
+		money = Fees },
+	{ key = "net", title = "Netto", width = 105, defaultDesc = true,
+		money = function(e) return e.net end },
 	{ key = "character", title = "Charakter", width = 85,
 		text = function(e) return e.character or "" end,
 		sort = function(e) return e.character end },
@@ -146,19 +138,19 @@ local function ShowEntryTooltip(rowFrame, e)
 		GameTooltip:AddLine("Postrechnung noch nicht abgeholt: Käufer und endgültiger Betrag folgen.", 1, 0.82, 0, true)
 	end
 	if e.deposit then
-		GameTooltip:AddDoubleLine("Einstellgebühr", ns.Money(e.deposit), 0.8, 0.8, 0.8, 1, 1, 1)
+		GameTooltip:AddDoubleLine("Einstellgebühr", ns.MoneyAligned(e.deposit), 0.8, 0.8, 0.8, 1, 1, 1)
 	end
 	if e.cut then
-		GameTooltip:AddDoubleLine("AH-Gebühr", ns.Money(e.cut), 0.8, 0.8, 0.8, 1, 1, 1)
+		GameTooltip:AddDoubleLine("AH-Gebühr", ns.MoneyAligned(e.cut), 0.8, 0.8, 0.8, 1, 1, 1)
 	end
 	if e.cancelFee and e.cancelFee > 0 then
-		GameTooltip:AddDoubleLine("Abbruchgebühr", ns.Money(e.cancelFee), 0.8, 0.8, 0.8, 1, 1, 1)
+		GameTooltip:AddDoubleLine("Abbruchgebühr", ns.MoneyAligned(e.cancelFee), 0.8, 0.8, 0.8, 1, 1, 1)
 	end
 	GameTooltip:Show()
 end
 
 local function CreateJournalFrame()
-	frame = ns.CreateWindow("KontorJournalFrame", "Kontor – Journal", 1000, 540)
+	frame = ns.CreateWindow("KontorJournalFrame", "Kontor – Journal", 1040, 540)
 	frame:SetScript("OnShow", Refresh)
 
 	local typeOptions = { { label = "Alle Typen", value = false } }

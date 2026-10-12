@@ -60,16 +60,19 @@ local function AddPriceLines(tooltip, itemID)
 	local count = StackCount(tooltip)
 
 	if lastKnown then
-		tooltip:AddDoubleLine("AH Ø (zuletzt)", ns.Money(lastKnown.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+		tooltip:AddDoubleLine("AH Ø (zuletzt)", ns.MoneyAligned(lastKnown.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 		if count > 1 then
-			tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.Money(lastKnown.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+			tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.MoneyAligned(lastKnown.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 		end
 		tooltip:AddDoubleLine("Aktuell nicht im AH", "gesehen " .. ns.Ago(lastTime), GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
 	elseif price then
 		if price.top5 then
-			tooltip:AddDoubleLine("AH Ø", ns.Money(price.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+			-- Pfeil: Aenderung gegenueber dem vorletzten Scan
+			local previous = ns.GetPreviousPrice(itemID)
+			local trend = ns.TrendMarkup(previous and ns.PriceTrend(price.top5, previous.top5))
+			tooltip:AddDoubleLine("AH Ø", trend .. ns.MoneyAligned(price.top5), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 			if count > 1 then
-				tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.Money(price.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
+				tooltip:AddDoubleLine(("AH Ø für %d Stück"):format(count), ns.MoneyAligned(price.top5 * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 			end
 		else
 			tooltip:AddDoubleLine("AH", "nur Gebote, kein Sofortkauf", GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
@@ -78,11 +81,10 @@ local function AddPriceLines(tooltip, itemID)
 			GREY[1], GREY[2], GREY[3], GREY[1], GREY[2], GREY[3])
 	end
 	if vendor then
-		local right = ns.Money(vendor)
+		tooltip:AddDoubleLine("Händler-Einkauf", ns.MoneyAligned(vendor), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 		if count > 1 then
-			right = right .. " (" .. count .. " Stück: " .. ns.Money(vendor * count) .. ")"
+			tooltip:AddDoubleLine(("Händler für %d Stück"):format(count), ns.MoneyAligned(vendor * count), GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 		end
-		tooltip:AddDoubleLine("Händler-Einkauf", right, GOLD[1], GOLD[2], GOLD[3], 1, 1, 1)
 	end
 end
 
