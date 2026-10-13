@@ -122,9 +122,9 @@ end
 -- Pfeile stehen pro Spalte untereinander, rechtsbuendig direkt links vom breitesten sichtbaren Betrag
 function TableMixin:AnchorTrends(rowFrame)
 	for i, cell in ipairs(rowFrame.cells) do
-		if cell.trend then
-			cell.trend[1]:ClearAllPoints()
-			cell.trend[1]:SetPoint("RIGHT", cell, "RIGHT", -(self.trendOffset[i] or 0), 0)
+		if cell.columnTrend then
+			cell.columnTrend[1]:ClearAllPoints()
+			cell.columnTrend[1]:SetPoint("RIGHT", cell, "RIGHT", -(self.trendOffset[i] or 0), 0)
 		end
 	end
 end
@@ -134,7 +134,7 @@ function TableMixin:LayoutTrends()
 	local widest = {}
 	self.ScrollBox:ForEachFrame(function(rowFrame)
 		for i, cell in ipairs(rowFrame.cells or {}) do
-			if cell.trend then
+			if cell.columnTrend then
 				widest[i] = math.max(widest[i] or 0, cell:GetContentWidth())
 			end
 		end
@@ -184,8 +184,8 @@ function TableMixin:InitRow(rowFrame, row)
 				cell:SetWordWrap(false)
 			end
 			if column.trend then
-				cell.trend = { rowFrame:CreateTexture(nil, "OVERLAY"), rowFrame:CreateTexture(nil, "OVERLAY") }
-				cell.trend[2]:SetPoint("RIGHT", cell.trend[1], "LEFT", 1, 0)
+				cell.columnTrend = { rowFrame:CreateTexture(nil, "OVERLAY"), rowFrame:CreateTexture(nil, "OVERLAY") }
+				cell.columnTrend[2]:SetPoint("RIGHT", cell.columnTrend[1], "LEFT", 1, 0)
 			end
 			rowFrame.cells[i] = cell
 		end
@@ -219,8 +219,8 @@ function TableMixin:InitRow(rowFrame, row)
 		else
 			cell:SetText(column.text(row) or "")
 		end
-		if cell.trend then
-			ns.ApplyTrend(cell.trend, column.trend(row), column.trendUpIsGood)
+		if cell.columnTrend then
+			ns.ApplyTrend(cell.columnTrend, column.trend(row), column.trendUpIsGood)
 			self:QueueTrendLayout()
 		end
 		if column.color then
