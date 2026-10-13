@@ -19,9 +19,28 @@ function ns.Money(copper)
 	return GetMoneyString(copper, true)
 end
 
+-- Breite eines Texts in der Schrift font, oder nil. Gemessen mit einem eigenen FontString ausserhalb
+-- aller Blizzard-Fenster: Innerhalb eines Tooltips liefert WoW Breiten teils als Secret Value, mit dem
+-- ein Addon nicht rechnen darf.
+local measure
+
+function ns.TextWidth(font, text)
+	if not measure then
+		measure = UIParent:CreateFontString(nil, "BACKGROUND")
+		measure:SetPoint("TOPLEFT", UIParent, "BOTTOMRIGHT", 100, -100)
+		measure:SetAlpha(0)
+	end
+	measure:SetFontObject(font)
+	measure:SetText(text)
+	local width = measure:GetUnboundedStringWidth()
+	if ns.IsSecret(width) then
+		return nil
+	end
+	return width
+end
+
 -- Unsichtbare Textur als Platzhalter im Text, ungefaehr width breit (in Koordinaten der Schrift font)
 local BLANK = "Interface\\AddOns\\Kontor\\Media\\Blank"
-local measure
 local spacerUnit = {}
 
 local function Spacer(units)
@@ -32,14 +51,7 @@ function ns.SpacerMarkup(width, font)
 	local key = (font:GetName() or tostring(font)) .. ":" .. tostring(select(2, font:GetFont()))
 	local unit = spacerUnit[key]
 	if not unit then
-		if not measure then
-			measure = UIParent:CreateFontString(nil, "BACKGROUND")
-			measure:SetPoint("TOPLEFT", UIParent, "BOTTOMRIGHT", 100, -100)
-			measure:SetAlpha(0)
-		end
-		measure:SetFontObject(font)
-		measure:SetText(Spacer(100))
-		unit = measure:GetUnboundedStringWidth() / 100
+		unit = (ns.TextWidth(font, Spacer(100)) or 0) / 100
 		if unit <= 0 then
 			unit = 1
 		else
@@ -114,8 +126,12 @@ function ns.RealmKey()
 	return GetRealmName() .. "-" .. (UnitFactionGroup("player") or "Neutral")
 end
 
+function ns.IsSecret(value)
+	return issecretvalue ~= nil and issecretvalue(value)
+end
+
 function ns.SafeID(value)
-	if issecretvalue and issecretvalue(value) then
+	if ns.IsSecret(value) then
 		return nil
 	end
 	return value

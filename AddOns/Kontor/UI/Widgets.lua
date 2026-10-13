@@ -71,6 +71,7 @@ function MoneyMixin:Setup(font)
 	local _, size = font:GetFont()
 	local iconSize = math.floor((size or 12) + 0.5)
 	self:SetSize(1, iconSize + 2)
+	self.font = font
 	self.parts = {}
 	for _, coin in ipairs(COINS) do
 		local part = { text = self:CreateFontString(nil, "OVERLAY"), icon = self:CreateTexture(nil, "OVERLAY") }
@@ -87,10 +88,8 @@ function MoneyMixin:Setup(font)
 	local digits = digitWidths[key]
 	if not digits then
 		digits = 0
-		local probe = self.parts.copper.text
 		for d = 0, 9 do
-			probe:SetText(d .. d)
-			digits = math.max(digits, probe:GetUnboundedStringWidth())
+			digits = math.max(digits, ns.TextWidth(font, d .. d) or 0)
 		end
 		digits = math.ceil(digits)
 		if digits > 0 then
@@ -136,7 +135,8 @@ function MoneyMixin:SetValue(copper)
 		local value = values[coin.key]
 		if value > 0 or (coin.key == "copper" and not self.leftmost) then
 			local part = self.parts[coin.key]
-			part.text:SetText(sign .. (coin.key == "gold" and FormatLargeNumber(value) or value))
+			part.label = sign .. (coin.key == "gold" and FormatLargeNumber(value) or value)
+			part.text:SetText(part.label)
 			sign = ""
 			part.text:Show()
 			part.icon:Show()
@@ -165,7 +165,9 @@ function MoneyMixin:GetContentWidth()
 	if not self.leftmost then
 		return 0
 	end
-	local width = self.leftmost.textRight + self.leftmost.text:GetUnboundedStringWidth()
+	-- Nicht am eigenen FontString messen: im Tooltip kaeme die Breite teils als Secret Value
+	local text = self.leftmost.label
+	local width = self.leftmost.textRight + (ns.TextWidth(self.font, text) or #text * 7)
 	if self.trendWidth > 0 then
 		width = width + TREND_GAP + self.trendWidth
 	end
@@ -215,7 +217,9 @@ function ns.AddMoneyLine(tooltip, left, copper, opts)
 	opts = opts or {}
 	local lc, rc = opts.leftColor or WHITE, opts.color or WHITE
 	local name = tooltip:GetName()
-	if not copper or not name then
+	local lines, level = tooltip:NumLines(), tooltip:GetFrameLevel()
+	-- Tooltips mit Secret Values: Betrag als normaler Text
+	if not copper or not name or ns.IsSecret(lines) or ns.IsSecret(level) then
 		tooltip:AddDoubleLine(left, ns.Money(copper), lc[1], lc[2], lc[3], rc[1], rc[2], rc[3])
 		return
 	end
@@ -224,8 +228,12 @@ function ns.AddMoneyLine(tooltip, left, copper, opts)
 	display:SetTextColor(rc[1], rc[2], rc[3])
 	display:SetTrend(opts.trend, opts.upIsGood)
 	tooltip:AddDoubleLine(left, ns.SpacerMarkup(display:GetContentWidth(), GameTooltipText), lc[1], lc[2], lc[3], 1, 1, 1)
-	local right = _G[name .. "TextRight" .. tooltip:NumLines()]
+	local right = _G[name .. "TextRight" .. (lines + 1)]
+	if not right then
+		display:Hide()
+		return
+	end
 	display:SetPoint("RIGHT", right, "RIGHT")
-	display:SetFrameLevel(tooltip:GetFrameLevel() + 5)
+	display:SetFrameLevel(level + 5)
 	display:Show()
 end
