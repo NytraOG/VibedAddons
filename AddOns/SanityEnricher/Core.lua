@@ -15,6 +15,10 @@ ns.DEFAULTS = {
 		repair = true,
 		guildRepair = true, -- zuerst aus der Gildenbank, sonst eigenes Gold
 	},
+	frames = {
+		move = true,     -- Standardfenster frei verschieben
+		remember = true, -- Positionen über Sitzungen hinweg merken
+	},
 }
 
 -- Shift gedrückt = Automatiken pausieren
@@ -109,6 +113,7 @@ local function Help()
 	ns.Print("  /sanity – Optionen")
 	ns.Print("  /sanity an | aus | toggle")
 	ns.Print("  /sanity minimap – Minimap-Button ein-/ausblenden")
+	ns.Print("  /sanity fenster – Fensterpositionen zurücksetzen")
 	ns.Print("Shift gedrückt halten = Pause")
 end
 

@@ -41,6 +41,13 @@ local function CreateOptions()
 	AddCheckbox("vendor", "repair", "Reparieren")
 	AddCheckbox("vendor", "guildRepair", "Gildenbank zuerst")
 
+	AddHeader(layout, "Fenster")
+	AddCheckbox("frames", "move", "Frei verschieben", "Taschen, Berufe, Auktionshaus usw. am Hintergrund ziehen.")
+	AddCheckbox("frames", "remember", "Positionen merken", "Aus: nur bis zum Ausloggen.")
+	layout:AddInitializer(CreateSettingsButtonInitializer("Positionen", "Zurücksetzen", function()
+		ns.ResetFramePositions()
+	end, nil, false))
+
 	Settings.RegisterAddOnCategory(category)
 end
 
