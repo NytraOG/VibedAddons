@@ -43,7 +43,7 @@ function ns.AbortScan(reason)
 end
 
 local function ReadEntry(index)
-	local _, _, count, _, _, _, _, minBid, _, buyout, _, _, _, owner, _, _, itemID =
+	local name, _, count, _, _, _, _, minBid, _, buyout, _, _, _, owner, _, _, itemID =
 		C_AuctionHouse.GetReplicateItemInfo(index)
 	if not itemID then
 		return false
@@ -58,6 +58,11 @@ local function ReadEntry(index)
 	if not entry then
 		entry = { units = {}, quantity = 0, auctions = 0 }
 		scan.items[itemID] = entry
+	end
+	-- Ohne geladene Item-Daten ist der Name leer; dann beim naechsten Angebot desselben Items
+	if not entry.named and ns.ValidItemName(name) then
+		ns.db.itemNames[itemID] = name
+		entry.named = true
 	end
 	entry.quantity = entry.quantity + count
 	entry.auctions = entry.auctions + 1
@@ -123,9 +128,7 @@ local function Finish()
 	end
 	scan = nil
 	Notify()
-	if ns.OnPricesChanged then
-		ns.OnPricesChanged()
-	end
+	ns.Fire("PricesChanged")
 end
 
 -- Ein fehlerhafter Eintrag darf nicht den ganzen Scan blockieren: Fehler zaehlen, weitermachen.

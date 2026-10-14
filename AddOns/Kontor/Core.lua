@@ -38,6 +38,20 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
 	end
 end)
 
+-- Interne Benachrichtigungen, z.B. "PricesChanged" (neuer Scan, geaenderte Optionen)
+local listeners = {}
+
+function ns.Listen(name, fn)
+	listeners[name] = listeners[name] or {}
+	table.insert(listeners[name], fn)
+end
+
+function ns.Fire(name, ...)
+	for _, fn in ipairs(listeners[name] or {}) do
+		fn(...)
+	end
+end
+
 -- ---- SavedVariables --------------------------------------------------------
 
 local loadedFromDisk = false
@@ -49,6 +63,12 @@ local function InitDB()
 	db.version = db.version or DB_VERSION
 	db.realms = db.realms or {}
 	db.settings = db.settings or {}
+	db.itemNames = db.itemNames or {} -- itemID -> Name aus dem Scan, fuer die Suche im Preisverlauf
+	for itemID, name in pairs(db.itemNames) do
+		if name == "" then
+			db.itemNames[itemID] = nil -- leere Namen aus einer fruehen Testversion
+		end
+	end
 	for key, value in pairs(ns.DEFAULTS) do
 		if db.settings[key] == nil then
 			db.settings[key] = value
@@ -114,6 +134,7 @@ local function Help()
 	ns.Print("Befehle:")
 	ns.Print("  /kontor – Journal öffnen/schließen")
 	ns.Print("  /kontor margen – Margen-Liste öffnen/schließen")
+	ns.Print("  /kontor verlauf – Preisverlauf öffnen/schließen")
 	ns.Print("  /kontor scan – Komplett-Scan (Auktionshaus muss offen sein; \"force\" ignoriert die Sperrzeit)")
 	ns.Print("  /kontor status – gespeicherte Daten anzeigen")
 	ns.Print("  /kontor minimap – Minimap-Button ein-/ausblenden")

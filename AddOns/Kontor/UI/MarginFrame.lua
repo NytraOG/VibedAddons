@@ -141,7 +141,7 @@ local function Refresh()
 end
 
 ns.OnRecipesChanged = Refresh
-ns.OnPricesChanged = Refresh
+ns.Listen("PricesChanged", Refresh)
 
 -- Item-Namen/-Links werden asynchron nachgeladen: dann einmal gesammelt neu zeichnen
 local refreshPending = false
@@ -157,7 +157,7 @@ ns.On("GET_ITEM_INFO_RECEIVED", function()
 end)
 
 local function ShowRowTooltip(rowFrame, r)
-	GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
+	ns.SetTooltipOwnerOutside(GameTooltip, rowFrame)
 	GameTooltip:SetItemByID(r.itemID)
 	ns.AddMarginLines(GameTooltip, r.m.recipe, ns.CraftContext(r.character, r.profession))
 	GameTooltip:Show()

@@ -124,7 +124,7 @@ ns.OnJournalChanged = Refresh
 local LABEL = { 0.8, 0.8, 0.8 }
 
 local function ShowEntryTooltip(rowFrame, e)
-	GameTooltip:SetOwner(rowFrame, "ANCHOR_RIGHT")
+	ns.SetTooltipOwnerOutside(GameTooltip, rowFrame)
 	if e.link then
 		GameTooltip:SetHyperlink(e.link)
 		GameTooltip:AddLine(" ")
@@ -216,6 +216,14 @@ local function CreateJournalFrame()
 	marginsButton:SetText("Margen-Liste")
 	marginsButton:SetScript("OnClick", function()
 		ns.ToggleMargins()
+	end)
+
+	local historyButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	historyButton:SetSize(120, 22)
+	historyButton:SetPoint("RIGHT", marginsButton, "LEFT", -6, 0)
+	historyButton:SetText("Preisverlauf")
+	historyButton:SetScript("OnClick", function()
+		ns.ToggleHistory()
 	end)
 end
 

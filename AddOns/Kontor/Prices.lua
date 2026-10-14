@@ -85,3 +85,41 @@ function ns.PriceTrend(now, before)
 	end
 	return diff < 0 and -level or level
 end
+
+-- Preisverlauf eines Items fuer den Graphen: Liste { time, value } aus allen Scans, in denen es einen
+-- Sofortkaufpreis hatte, aelteste zuerst. field: "top5" oder "min"; since: nur Scans ab diesem Zeitpunkt.
+function ns.GetPriceSeries(itemID, field, since)
+	local points = {}
+	for _, snapshot in ipairs(ns.RealmData().history) do
+		local t = snapshot.meta.time
+		local entry = (not since or t >= since) and snapshot.items[itemID]
+		local price = entry and ParseHistoryEntry(entry)
+		if price and price[field] and price[field] > 0 then
+			points[#points + 1] = { time = t, value = price[field] }
+		end
+	end
+	return points
+end
+
+-- Alle Items, die in mindestens einem Scan des Verlaufs einen Sofortkaufpreis hatten (itemID -> true).
+-- Bleibt gleich (dieselbe Tabelle), bis ein neuer Scan dazukommt oder das Auktionshaus wechselt.
+local historyItems = {}
+
+function ns.HistoryItemIDs()
+	local history = ns.RealmData().history
+	local last = history[#history]
+	local key = ("%s:%d:%d"):format(ns.RealmKey(), #history, last and last.meta.time or 0)
+	if historyItems.key ~= key then
+		local ids = {}
+		for _, snapshot in ipairs(history) do
+			for itemID, entry in pairs(snapshot.items) do
+				-- "0:..." = kein Sofortkaufpreis in diesem Scan
+				if not ids[itemID] and entry:sub(1, 2) ~= "0:" then
+					ids[itemID] = true
+				end
+			end
+		end
+		historyItems.key, historyItems.ids = key, ids
+	end
+	return historyItems.ids
+end

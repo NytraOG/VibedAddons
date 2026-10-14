@@ -130,6 +130,13 @@ function ns.IsSecret(value)
 	return issecretvalue ~= nil and issecretvalue(value)
 end
 
+-- Item-Name oder nil (leer, solange die Item-Daten fehlen)
+function ns.ValidItemName(name)
+	if name and not ns.IsSecret(name) and name ~= "" then
+		return name
+	end
+end
+
 function ns.SafeID(value)
 	if ns.IsSecret(value) then
 		return nil

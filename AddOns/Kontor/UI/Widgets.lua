@@ -15,6 +15,7 @@ function ns.CreateWindow(name, title, width, height)
 	frame:SetScript("OnDragStart", frame.StartMoving)
 	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 	frame.TitleText:SetText(title)
+	frame.isKontorWindow = true
 	table.insert(UISpecialFrames, name)
 
 	-- Zahnrad links neben dem Schliessen-Knopf: Optionen
@@ -34,6 +35,69 @@ function ns.CreateWindow(name, title, width, height)
 	options:SetScript("OnLeave", GameTooltip_Hide)
 	frame:Hide()
 	return frame
+end
+
+-- ---- Tooltips neben dem Fenster ---------------------------------------------
+-- Item-Tooltips zu Zeilen in Kontor-Fenstern stehen links ausserhalb des Fensters, rechtsbuendig an
+-- dessen Kante, oben auf Hoehe der Zeile, damit sie nichts verdecken. Vergleichs-Tooltips ("Equipped")
+-- werden dort nicht gezeigt: Blizzard setzt sie je nach Platz auch ins Fenster.
+
+local function KontorWindow(region)
+	while region and not region.isKontorWindow do
+		region = region:GetParent()
+	end
+	return region
+end
+
+function ns.SetTooltipOwnerOutside(tooltip, owner)
+	local window = KontorWindow(owner)
+	local top, windowTop, left = owner:GetTop(), window and window:GetTop(), window and window:GetLeft()
+	if not top or not windowTop or not left then
+		tooltip:SetOwner(owner, "ANCHOR_LEFT")
+		return
+	end
+	tooltip:SetOwner(owner, "ANCHOR_NONE")
+	tooltip:ClearAllPoints()
+	-- Steht das Fenster am linken Bildschirmrand, rechts daneben
+	local screenWidth = UIParent:GetWidth() * UIParent:GetEffectiveScale() / window:GetEffectiveScale()
+	local right = screenWidth - window:GetRight()
+	if left < 250 and right > left then
+		tooltip:SetPoint("TOPLEFT", window, "TOPRIGHT", 2, top - windowTop)
+	else
+		tooltip:SetPoint("TOPRIGHT", window, "TOPLEFT", -2, top - windowTop)
+	end
+end
+
+-- Vergleichs-Tooltips gehoeren dem Haupt-Tooltip (TooltipComparisonManager:Initialize). Sie werden auf
+-- mehreren Wegen eingeblendet (Platzierung, spaeter nachgeladene Item-Daten), daher an zwei Stellen:
+-- beim Einblenden (OnShow) und nach der Platzierung, falls sie schon sichtbar waren.
+local function IsKontorTooltip(tooltip)
+	local owner = tooltip and tooltip.GetOwner and tooltip:GetOwner()
+	return owner ~= nil and KontorWindow(owner) ~= nil
+end
+
+local function HideIfKontor(shopping)
+	if IsKontorTooltip(shopping:GetOwner()) then
+		shopping:Hide()
+	end
+end
+
+local function HideComparison(manager)
+	if IsKontorTooltip(manager.tooltip) then
+		for _, shopping in ipairs(manager.tooltip.shoppingTooltips or {}) do
+			shopping:Hide()
+		end
+	end
+end
+
+for _, shopping in ipairs(GameTooltip.shoppingTooltips or { ShoppingTooltip1, ShoppingTooltip2 }) do
+	shopping:HookScript("OnShow", HideIfKontor)
+end
+if TooltipComparisonManager then
+	local ok, err = pcall(hooksecurefunc, TooltipComparisonManager, "AnchorShoppingTooltips", HideComparison)
+	if not ok then
+		ns.Print("Vergleichs-Tooltips lassen sich nicht ausblenden: %s", tostring(err))
+	end
 end
 
 -- Dropdown mit Radio-Eintraegen. options: Liste { label, value } oder Funktion, die eine liefert

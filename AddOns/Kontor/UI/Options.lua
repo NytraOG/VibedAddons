@@ -7,9 +7,7 @@ local category
 
 -- Offene Kontor-Fenster mit den neuen Werten neu zeichnen
 local function Changed()
-	if ns.OnPricesChanged then
-		ns.OnPricesChanged()
-	end
+	ns.Fire("PricesChanged")
 end
 
 local function Register(key, varType, label, step)

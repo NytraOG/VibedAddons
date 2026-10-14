@@ -55,6 +55,8 @@ local function CreateButton()
 	button:SetScript("OnClick", function(_, mouseButton)
 		if mouseButton == "RightButton" then
 			ns.ToggleMargins()
+		elseif IsShiftKeyDown() then
+			ns.ToggleHistory()
 		else
 			ns.ToggleJournal()
 		end
@@ -70,6 +72,7 @@ local function CreateButton()
 		GameTooltip:AddLine("Kontor")
 		GameTooltip:AddLine("Linksklick: Journal", 1, 1, 1)
 		GameTooltip:AddLine("Rechtsklick: Margen-Liste", 1, 1, 1)
+		GameTooltip:AddLine("Shift-Linksklick: Preisverlauf", 1, 1, 1)
 		GameTooltip:AddLine("Ziehen: Button verschieben", 0.6, 0.6, 0.6)
 		GameTooltip:AddLine("/kontor minimap: Button ein-/ausblenden", 0.6, 0.6, 0.6)
 		GameTooltip:Show()
