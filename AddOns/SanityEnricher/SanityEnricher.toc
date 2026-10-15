@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: Sanity Enricher
-## Notes: Komfortfunktionen: Quests automatisch annehmen und abgeben, Müll verkaufen, reparieren, Fenster verschieben, lernbare Zauber im Zauberbuch
-## Version: 0.3.0
+## Notes: Komfortfunktionen: Quests automatisch annehmen und abgeben, Müll verkaufen, reparieren, Fenster verschieben, Taschen sortieren, lernbare Zauber im Zauberbuch
+## Version: 0.4.0
 ## SavedVariables: SanityEnricherDB
 ## IconTexture: Interface\Icons\INV_Misc_Note_02
 ## AddonCompartmentFunc: SanityEnricher_OnAddonCompartmentClick
@@ -11,6 +11,7 @@ Core.lua
 Quests.lua
 Vendor.lua
 Frames.lua
+Bags.lua
 Trainer.lua
 UI\Options.lua
 UI\MinimapButton.lua

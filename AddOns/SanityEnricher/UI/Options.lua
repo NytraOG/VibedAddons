@@ -53,6 +53,9 @@ local function CreateOptions()
 		ns.ResetFramePositions()
 	end, nil, false))
 
+	AddHeader(layout, "Taschen")
+	AddCheckbox("bags", "autoSort", "Beim Öffnen sortieren")
+
 	AddHeader(layout, "Zauberbuch")
 	AddCheckbox("spellbook", "tab", "Reiter „Lernbar“", "Preise kommen vom Lehrer.", function()
 		ns.UpdateSpellBookTab()
