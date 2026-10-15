@@ -3,7 +3,7 @@ local _, ns = ...
 -- Lernbare Zauber: Liste aller Zauber, die der Charakter noch lernen kann, mit Stufe und Preis.
 --
 -- Preise kennt der Client nur bei offenem Lehrerfenster. Beim Lehrer wird deshalb die ganze
--- Liste pro Charakter in SanityEnricherDB.trainer gespeichert. Annahme: Die Preise bleiben bis zum
+-- Liste pro Charakter (GUID) in SanityEnricherDB.trainer gespeichert. Annahme: Die Preise bleiben bis zum
 -- nächsten Besuch gleich (Ruf-Rabatte o.Ä. werden erst dann aktualisiert).
 -- Zusätzlich kommen die zukünftigen Zauber aus dem Zauberbuch dazu (ohne Preis), damit die Liste
 -- auch vor dem ersten Lehrerbesuch etwas zeigt.
@@ -40,16 +40,29 @@ function ns.PlayerLevel()
 	return math.max(UnitLevel("player"), levelOverride or 0)
 end
 
+-- Daten pro Charakter-GUID (Name-Realm ist nicht eindeutig, z.B. bei neu erstellten Charakteren
+-- gleichen Namens). Passt die gespeicherte Klasse nicht zur aktuellen, werden die Daten verworfen.
 local function CharStore()
-	local key = UnitName("player") .. "-" .. GetRealmName()
 	ns.db.trainer = ns.db.trainer or {}
+	local key = UnitGUID("player")
+	local class = select(2, UnitClass("player"))
 	local store = ns.db.trainer[key]
-	if not store then
-		store = { spells = {} }
+	if not store or store.class ~= class then
+		store = { spells = {}, class = class }
 		ns.db.trainer[key] = store
 	end
+	store.name = UnitName("player") .. "-" .. GetRealmName()
 	return store
 end
+
+-- Alte Einträge (bis 0.4.0 nach Name-Realm gespeichert, ohne Klasse) entfernen
+ns.On("PLAYER_LOGIN", function()
+	for key in pairs(ns.db.trainer or {}) do
+		if not key:find("^Player%-") then
+			ns.db.trainer[key] = nil
+		end
+	end
+end)
 
 function ns.TrainerDataTime()
 	return ns.db and CharStore().updated
