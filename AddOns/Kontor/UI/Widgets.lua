@@ -49,22 +49,30 @@ local function KontorWindow(region)
 	return region
 end
 
-function ns.SetTooltipOwnerOutside(tooltip, owner)
-	local window = KontorWindow(owner)
+-- Bereits gesetzten Tooltip neben window verschieben (links, ausser das Fenster steht am linken
+-- Bildschirmrand). Rueckgabe: false, wenn die Positionen noch nicht bekannt sind.
+function ns.PlaceTooltipOutside(tooltip, owner, window)
 	local top, windowTop, left = owner:GetTop(), window and window:GetTop(), window and window:GetLeft()
 	if not top or not windowTop or not left then
-		tooltip:SetOwner(owner, "ANCHOR_LEFT")
-		return
+		return false
 	end
-	tooltip:SetOwner(owner, "ANCHOR_NONE")
 	tooltip:ClearAllPoints()
-	-- Steht das Fenster am linken Bildschirmrand, rechts daneben
 	local screenWidth = UIParent:GetWidth() * UIParent:GetEffectiveScale() / window:GetEffectiveScale()
 	local right = screenWidth - window:GetRight()
 	if left < 250 and right > left then
 		tooltip:SetPoint("TOPLEFT", window, "TOPRIGHT", 2, top - windowTop)
 	else
 		tooltip:SetPoint("TOPRIGHT", window, "TOPLEFT", -2, top - windowTop)
+	end
+	return true
+end
+
+-- window: Fenster, neben das der Tooltip soll (Standard: das Kontor-Fenster von owner)
+function ns.SetTooltipOwnerOutside(tooltip, owner, window)
+	window = window or KontorWindow(owner)
+	tooltip:SetOwner(owner, "ANCHOR_NONE")
+	if not ns.PlaceTooltipOutside(tooltip, owner, window) then
+		tooltip:SetOwner(owner, "ANCHOR_LEFT")
 	end
 end
 

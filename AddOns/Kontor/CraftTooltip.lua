@@ -101,12 +101,15 @@ EventRegistry:RegisterCallback("Professions.RecipeListOnEnter", function(_, butt
 		if not recipe then
 			return
 		end
+		-- Neben das Berufe-Fenster statt mitten hinein
+		local window = ProfessionsFrame
 		if not (GameTooltip:IsShown() and GameTooltip:IsOwned(button.Label)) then
-			GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+			ns.SetTooltipOwnerOutside(GameTooltip, button, window)
 			GameTooltip:AddLine(recipe.name, 1, 1, 1)
 		end
 		ns.AddMarginLines(GameTooltip, recipe, CurrentContext())
 		GameTooltip:Show()
+		ns.PlaceTooltipOutside(GameTooltip, button, window)
 	end)
 	if not ok then
 		ns.Print("Margen-Tooltip fehlgeschlagen: %s", tostring(err))
