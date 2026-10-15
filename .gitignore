@@ -1,0 +1,26 @@
+# Blizzards UI-Quellcode (eigener Klon, siehe README)
+/wow-ui-source/
+
+# Generiert von tools/build_api_reference.py
+/docs/api-reference.html
+
+# Python
+/tools/.venv/
+__pycache__/
+*.py[cod]
+
+# Editoren und lokale Einstellungen
+.vscode/
+.idea/
+*.code-workspace
+.claude/settings.local.json
+
+# Betriebssystem
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Temporäres
+*.log
+*.tmp
+*.bak
