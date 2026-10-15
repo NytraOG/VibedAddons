@@ -6,7 +6,7 @@ local category
 local enabledSetting
 
 -- Checkbox für einen Wert in ns.db.settings[section][key] (section nil = oberste Ebene)
-local function AddCheckbox(section, key, label, tooltip)
+local function AddCheckbox(section, key, label, tooltip, onChange)
 	local function Target()
 		return section and ns.db.settings[section] or ns.db.settings
 	end
@@ -14,7 +14,12 @@ local function AddCheckbox(section, key, label, tooltip)
 	local variable = ("SANITYENRICHER_%s_%s"):format(section or "MAIN", key):upper()
 	local setting = Settings.RegisterProxySetting(category, variable, Settings.VarType.Boolean, label, default,
 		function() return Target()[key] end,
-		function(value) Target()[key] = value end)
+		function(value)
+			Target()[key] = value
+			if onChange then
+				onChange(value)
+			end
+		end)
 	Settings.CreateCheckbox(category, setting, tooltip)
 	return setting
 end
@@ -47,6 +52,11 @@ local function CreateOptions()
 	layout:AddInitializer(CreateSettingsButtonInitializer("Positionen", "Zurücksetzen", function()
 		ns.ResetFramePositions()
 	end, nil, false))
+
+	AddHeader(layout, "Zauberbuch")
+	AddCheckbox("spellbook", "tab", "Reiter „Lernbar“", "Preise kommen vom Lehrer.", function()
+		ns.UpdateSpellBookTab()
+	end)
 
 	Settings.RegisterAddOnCategory(category)
 end

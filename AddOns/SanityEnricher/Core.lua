@@ -19,6 +19,9 @@ ns.DEFAULTS = {
 		move = true,     -- Standardfenster frei verschieben
 		remember = true, -- Positionen über Sitzungen hinweg merken
 	},
+	spellbook = {
+		tab = true, -- Reiter „Lernbar“ im Zauberbuch
+	},
 }
 
 -- Shift gedrückt = Automatiken pausieren
