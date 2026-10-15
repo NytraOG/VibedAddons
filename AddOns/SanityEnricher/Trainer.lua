@@ -10,7 +10,8 @@ local _, ns = ...
 -- Was der Lehrer nur bei aktivem Filter „Nicht verfügbar“ zeigt, wird auch nur dann erfasst.
 -- Bücher vom Händler (z.B. Grimoires des Dämonenlehrers) werden beim Händler mit Preis und
 -- Mindeststufe gespeichert und gelten als gelernt, sobald ihr Lern-Zauber gewirkt wurde oder ihr
--- Tooltip „Bereits bekannt“ zeigt.
+-- Tooltip „Bereits bekannt“ zeigt. Grimoires, deren Fähigkeit ein Dämon schon kann, fallen ebenfalls
+-- raus; dazu muss der Dämon einmal beschworen gewesen sein (siehe Dämonen-Fähigkeiten).
 
 local BANK = Enum.SpellBookSpellBank.Player
 
@@ -223,6 +224,74 @@ ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
 	end
 end)
 
+-- ---- Dämonen-Fähigkeiten ----------------------------------------------------------
+
+-- Das Begleiter-Zauberbuch zeigt nur den gerade beschworenen Dämon. Deshalb wird pro Charakter
+-- gemerkt, welche Fähigkeit in welchem Rang schon einmal gesehen wurde (Name -> höchster Rang).
+-- Ein Buch gilt als bekannt, wenn sein Name eine solche Fähigkeit enthält und sein Rang (Zahl in
+-- Klammern am Namensende, z.B. „(Rank 2)“) nicht höher ist.
+
+local function RankNumber(text)
+	return text and tonumber(text:match("%d+")) or 0
+end
+
+local function PetSpells()
+	local store = CharStore()
+	store.petSpells = store.petSpells or {}
+	return store.petSpells
+end
+
+local function ReadPetSpells()
+	if not ns.db then
+		return
+	end
+	local numSpells = C_SpellBook.HasPetSpells()
+	if not numSpells or numSpells == 0 then
+		return
+	end
+	local known = PetSpells()
+	local changed = false
+	for slot = 1, numSpells do
+		local info = C_SpellBook.GetSpellBookItemInfo(slot, Enum.SpellBookSpellBank.Pet)
+		local spellID = info and ns.SafeID(info.spellID)
+		local name = spellID and ns.SafeID(info.name)
+		if name and name ~= "" and info.itemType ~= Enum.SpellBookItemType.FutureSpell then
+			local subName = ns.SafeID(info.subName)
+			if not subName or subName == "" then
+				subName = C_Spell.GetSpellSubtext(spellID)
+			end
+			local rank = RankNumber(ns.SafeID(subName))
+			if (known[name] or -1) < rank then
+				known[name] = rank
+				changed = true
+			end
+		end
+	end
+	if changed then
+		Fire()
+	end
+end
+
+local function PetKnowsItem(item)
+	local rank = RankNumber(item.name:match("%((.-)%)%s*$"))
+	for spellName, knownRank in pairs(PetSpells()) do
+		if rank <= knownRank and item.name:find(spellName, 1, true) then
+			return true
+		end
+	end
+	return false
+end
+
+local ScheduleReadPetSpells = Debounced(ReadPetSpells)
+ns.On("PLAYER_LOGIN", ScheduleReadPetSpells)
+ns.On("SPELLS_CHANGED", ScheduleReadPetSpells)
+ns.On("PET_BAR_UPDATE", ScheduleReadPetSpells)
+ns.On("UNIT_PET", function(unit)
+	if unit == "player" then
+		ScheduleReadPetSpells()
+	end
+end)
+
 -- ---- Zauberbuch ---------------------------------------------------------------
 
 -- Zukünftige Zauber aus allen sichtbaren Bereichen des Zauberbuchs (ohne andere Spezialisierungen)
@@ -298,7 +367,7 @@ function ns.GetLearnableSpells()
 	for itemID, saved in pairs(items) do
 		if TooltipSaysKnown(C_TooltipInfo.GetItemByID(itemID)) then
 			MarkItemLearned(itemID)
-		else
+		elseif not PetKnowsItem(saved) then
 			local entry = CopyTable(saved)
 			entry.order = ITEM_ORDER_OFFSET + entry.order
 			entry.owned = C_Item.GetItemCount(itemID) > 0
