@@ -169,7 +169,9 @@ local function ItemOnEnter(item)
 	item.Backplate:SetAlpha(BACKPLATE_HOVER_ALPHA)
 	local entry = item.entry
 	GameTooltip:SetOwner(item, "ANCHOR_RIGHT")
-	if entry.spellID then
+	if entry.itemID then
+		GameTooltip:SetItemByID(entry.itemID)
+	elseif entry.spellID then
 		GameTooltip:SetSpellByID(entry.spellID)
 	else
 		GameTooltip:SetText(entry.name)
@@ -252,7 +254,11 @@ local function SetItem(item, entry)
 	else
 		item.Info:SetFormattedText("Stufe %d", entry.level)
 	end
-	item.Price:SetText(entry.cost and Money(entry.cost) or "Preis ?")
+	if entry.owned then
+		item.Price:SetText("In Taschen")
+	else
+		item.Price:SetText(entry.cost and Money(entry.cost) or "Preis ?")
+	end
 	for _, fs in ipairs({ item.Name, item.Info, item.Price }) do
 		fs:SetAlpha(alpha)
 	end

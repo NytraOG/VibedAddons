@@ -8,6 +8,9 @@ local _, ns = ...
 -- Zusätzlich kommen die zukünftigen Zauber aus dem Zauberbuch dazu (ohne Preis), damit die Liste
 -- auch vor dem ersten Lehrerbesuch etwas zeigt.
 -- Was der Lehrer nur bei aktivem Filter „Nicht verfügbar“ zeigt, wird auch nur dann erfasst.
+-- Bücher vom Händler (z.B. Grimoires des Dämonenlehrers) werden beim Händler mit Preis und
+-- Mindeststufe gespeichert und gelten als gelernt, sobald ihr Lern-Zauber gewirkt wurde oder ihr
+-- Tooltip „Bereits bekannt“ zeigt.
 
 local BANK = Enum.SpellBookSpellBank.Player
 
@@ -16,6 +19,7 @@ local TRAINER_READ_DELAY = 0.2
 
 -- Reihenfolge innerhalb einer Stufe: Lehrer-Einträge vor reinen Zauberbuch-Einträgen
 local SPELLBOOK_ORDER_OFFSET = 10000
+local ITEM_ORDER_OFFSET = 20000
 
 local listeners = {}
 local levelOverride
@@ -103,21 +107,121 @@ local function ReadTrainer()
 	Fire()
 end
 
-local readPending = false
-
-local function ScheduleRead()
-	if readPending then
-		return
+-- Mehrere Events kurz hintereinander nur einmal auswerten
+local function Debounced(fn)
+	local pending = false
+	return function()
+		if pending then
+			return
+		end
+		pending = true
+		C_Timer.After(TRAINER_READ_DELAY, function()
+			pending = false
+			fn()
+		end)
 	end
-	readPending = true
-	C_Timer.After(TRAINER_READ_DELAY, function()
-		readPending = false
-		ReadTrainer()
-	end)
 end
 
-ns.On("TRAINER_SHOW", ScheduleRead)
-ns.On("TRAINER_UPDATE", ScheduleRead)
+local ScheduleTrainerRead = Debounced(ReadTrainer)
+ns.On("TRAINER_SHOW", ScheduleTrainerRead)
+ns.On("TRAINER_UPDATE", ScheduleTrainerRead)
+
+-- ---- Händler: Bücher wie die Grimoires des Dämonenlehrers ---------------------
+
+-- Lehrende Gegenstände: Rezept-Klasse, Unterklasse Buch (Grimoires, Folianten)
+local function IsTeachingItem(itemID)
+	local classID, subClassID = select(6, C_Item.GetItemInfoInstant(itemID))
+	return classID == Enum.ItemClass.Recipe and subClassID == Enum.ItemRecipeSubclass.Book
+end
+
+-- Tooltip mit Zeile „Bereits bekannt“
+local function TooltipSaysKnown(data)
+	if not data or not data.lines or not ITEM_SPELL_KNOWN then
+		return false
+	end
+	for _, line in ipairs(data.lines) do
+		local text = line.leftText
+		if text and not (issecretvalue and issecretvalue(text)) and text == ITEM_SPELL_KNOWN then
+			return true
+		end
+	end
+	return false
+end
+
+local function ItemStores()
+	local store = CharStore()
+	store.items = store.items or {}
+	store.learnedItems = store.learnedItems or {}
+	return store.items, store.learnedItems
+end
+
+local function MarkItemLearned(itemID)
+	local items, learned = ItemStores()
+	items[itemID] = nil
+	learned[itemID] = true
+end
+
+local function ReadMerchant()
+	if not ns.db then
+		return
+	end
+	local items, learned = ItemStores()
+	local found = false
+	for index = 1, GetMerchantNumItems() do
+		local itemID = GetMerchantItemID(index)
+		if itemID and IsTeachingItem(itemID) then
+			found = true
+			local info = C_MerchantFrame.GetItemInfo(index)
+			if TooltipSaysKnown(C_TooltipInfo.GetMerchantItem(index)) then
+				MarkItemLearned(itemID)
+			elseif info and not learned[itemID] then
+				local name, _, _, _, level = C_Item.GetItemInfo(itemID)
+				if not level then
+					C_Item.RequestLoadItemDataByID(itemID)
+				end
+				items[itemID] = {
+					itemID = itemID,
+					name = name or info.name or "",
+					icon = info.texture,
+					level = level or 0,
+					cost = info.price,
+					useSpellID = select(2, C_Item.GetItemSpell(itemID)),
+					order = index,
+				}
+			end
+		end
+	end
+	if found then
+		Fire()
+	end
+end
+
+local ScheduleMerchantRead = Debounced(ReadMerchant)
+ns.On("MERCHANT_SHOW", ScheduleMerchantRead)
+ns.On("MERCHANT_UPDATE", ScheduleMerchantRead)
+-- Stufe und Name fehlen, solange die Item-Daten nicht geladen sind
+ns.On("GET_ITEM_INFO_RECEIVED", function()
+	if MerchantFrame and MerchantFrame:IsShown() then
+		ScheduleMerchantRead()
+	end
+end)
+
+-- Gelernt, sobald der Lern-Zauber des Buchs erfolgreich gewirkt wurde (scheitert z.B., wenn der
+-- Dämon die Fähigkeit schon kennt)
+ns.On("UNIT_SPELLCAST_SUCCEEDED", function(unit, _, spellID)
+	spellID = ns.SafeID(spellID)
+	if unit ~= "player" or not spellID or not ns.db then
+		return
+	end
+	local items = ItemStores()
+	for itemID, item in pairs(items) do
+		if item.useSpellID == spellID then
+			MarkItemLearned(itemID)
+			Fire()
+			return
+		end
+	end
+end)
 
 -- ---- Zauberbuch ---------------------------------------------------------------
 
@@ -190,6 +294,18 @@ function ns.GetLearnableSpells()
 		end
 	end
 
+	local items = ItemStores()
+	for itemID, saved in pairs(items) do
+		if TooltipSaysKnown(C_TooltipInfo.GetItemByID(itemID)) then
+			MarkItemLearned(itemID)
+		else
+			local entry = CopyTable(saved)
+			entry.order = ITEM_ORDER_OFFSET + entry.order
+			entry.owned = C_Item.GetItemCount(itemID) > 0
+			table.insert(list, entry)
+		end
+	end
+
 	table.sort(list, SortEntries)
 
 	local playerLevel = ns.PlayerLevel()
@@ -198,10 +314,13 @@ function ns.GetLearnableSpells()
 		entry.available = entry.level <= playerLevel
 		if entry.available then
 			count = count + 1
-			if entry.cost then
-				total = total + entry.cost
-			else
-				unknown = unknown + 1
+			-- Bereits gekaufte Bücher zählen nicht zum Gesamtpreis
+			if not entry.owned then
+				if entry.cost then
+					total = total + entry.cost
+				else
+					unknown = unknown + 1
+				end
 			end
 		end
 	end
