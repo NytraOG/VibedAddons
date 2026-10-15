@@ -20,6 +20,7 @@ local COLUMNS = 3
 local X_PADDING, Y_PADDING = 15, 10
 local HEADER_HEIGHT = 51
 local HEADER_SPACING = 20
+local PAGING_RESERVE = 60 -- Ersatzwert, falls die Position der Blätter-Buttons noch unbekannt ist
 local UNLEARNED_ALPHA = 0.6
 local BACKPLATE_ALPHA, BACKPLATE_HOVER_ALPHA = 0.25, 1
 
@@ -326,8 +327,22 @@ local function ViewCount()
 	return book.isMinimized and 1 or 2
 end
 
-local function RowsFor(view, withHeader)
+-- Höhe der Ansicht ohne den Bereich, den die Blätter-Buttons darunter belegen
+local function UsableHeight(view)
 	local height = view:GetHeight()
+	local top, viewLeft, viewRight = view:GetTop(), view:GetLeft(), view:GetRight()
+	local controlsTop, left, right = controls:GetTop(), controls:GetLeft(), controls:GetRight()
+	if not (top and viewLeft and controlsTop and left) then
+		return height - PAGING_RESERVE
+	end
+	if left < viewRight and right > viewLeft then
+		height = math.min(height, top - controlsTop - Y_PADDING)
+	end
+	return height
+end
+
+local function RowsFor(view, withHeader)
+	local height = UsableHeight(view)
 	if withHeader then
 		height = height - HEADER_HEIGHT - HEADER_SPACING
 	end
